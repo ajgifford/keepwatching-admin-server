@@ -3,6 +3,7 @@ import 'dotenv/config';
 import { logger } from './logger/logger';
 import { errorHandler } from './middleware/errorMiddleware';
 import accountRouter from './routes/accountManagementRouter';
+import systemNotificationRouter from './routes/systemNotificationsRouter';
 import bodyParser from 'body-parser';
 import { exec } from 'child_process';
 import compression from 'compression';
@@ -12,7 +13,6 @@ import express from 'express';
 import rateLimit from 'express-rate-limit';
 import helmet from 'helmet';
 import { createServer } from 'http';
-import path from 'path';
 import { Tail } from 'tail';
 
 // Increase max listeners to handle multiple SSE connections
@@ -61,6 +61,7 @@ const LOG_PATHS = {
 };
 
 app.use(accountRouter);
+app.use(systemNotificationRouter);
 
 // SSE endpoint for service status updates
 app.get('/api/status/stream', (req, res) => {

@@ -44,7 +44,12 @@ export class ConflictError extends CustomError {
   }
 }
 
-// Database error handler
+export class NoAffectedRowsError extends CustomError {
+  constructor(message: string) {
+    super(message, 400, 'NO_AFFECTED_ROWS');
+  }
+}
+
 export class DatabaseError extends CustomError {
   constructor(message: string, originalError: any) {
     super(message, 500, 'DATABASE_ERROR');

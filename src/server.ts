@@ -3,6 +3,7 @@ import 'dotenv/config';
 import { logger } from './logger/logger';
 import { errorHandler } from './middleware/errorMiddleware';
 import accountRouter from './routes/accountManagementRouter';
+import contentRouter from './routes/contentRouter';
 import systemNotificationRouter from './routes/systemNotificationsRouter';
 import bodyParser from 'body-parser';
 import { exec } from 'child_process';
@@ -61,6 +62,7 @@ const LOG_PATHS = {
 };
 
 app.use(accountRouter);
+app.use(contentRouter);
 app.use(systemNotificationRouter);
 
 // SSE endpoint for service status updates

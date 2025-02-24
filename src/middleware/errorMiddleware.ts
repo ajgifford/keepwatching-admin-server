@@ -100,10 +100,3 @@ export const errorHandler = (error: Error, req: Request, res: Response, next: Ne
     });
   }
 };
-
-// Async handler wrapper
-export const asyncHandler = (fn: Function) => {
-  return (req: Request, res: Response, next: NextFunction) => {
-    Promise.resolve(fn(req, res, next)).catch(next);
-  };
-};

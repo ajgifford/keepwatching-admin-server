@@ -17,6 +17,7 @@ import helmet from 'helmet';
 import { createServer } from 'http';
 import path from 'path';
 import { Tail } from 'tail';
+import { promisify } from 'util';
 
 // Increase max listeners to handle multiple SSE connections
 EventEmitter.defaultMaxListeners = 30;
@@ -58,6 +59,15 @@ interface LogEntry {
   logFile?: string;
 }
 
+interface LogFilter {
+  service?: string;
+  level?: string;
+  startDate?: string | null;
+  endDate?: string | null;
+  searchTerm?: string;
+  limit?: number;
+}
+
 // SSE client management
 const clients = new Set<express.Response>();
 
@@ -82,6 +92,14 @@ const LOG_PATHS = {
   nginx: '/var/log/nginx/access.log',
   'pm2-out': `${PM2_LOG_DIRECTORY}/keepwatching-server-out-0.log`,
   'pm2-error': `${PM2_LOG_DIRECTORY}/keepwatching-server-error-0.log`,
+};
+
+const SERVICE_MAPPING: { [key: string]: string } = {
+  'express-rotating': 'express',
+  'express-error': 'express',
+  nginx: 'nginx',
+  'pm2-out': 'pm2',
+  'pm2-error': 'pm2',
 };
 
 app.use(accountRouter);
@@ -119,8 +137,8 @@ function fileExists(path: string): boolean {
   }
 }
 
-// Helper function to find the most recent rotating log file
-function findLatestRotatingLog(basePath: string): string | null {
+// Helper function to find all available rotating log files
+function findAllRotatingLogs(basePath: string): string[] {
   try {
     const dir = path.dirname(basePath);
     const baseFileName = path.basename(basePath);
@@ -129,10 +147,6 @@ function findLatestRotatingLog(basePath: string): string | null {
     const files = fs.readdirSync(dir);
     const rotatingLogs = files.filter((file) => file.startsWith(prefix));
 
-    if (rotatingLogs.length === 0) {
-      return null;
-    }
-
     // Sort by modification time (most recent first)
     rotatingLogs.sort((a, b) => {
       const statA = fs.statSync(path.join(dir, a));
@@ -140,12 +154,198 @@ function findLatestRotatingLog(basePath: string): string | null {
       return statB.mtime.getTime() - statA.mtime.getTime();
     });
 
-    return path.join(dir, rotatingLogs[0]);
+    return rotatingLogs.map((file) => path.join(dir, file));
   } catch (err) {
-    console.error('Error finding latest rotating log:', err);
+    console.error('Error finding rotating logs:', err);
+    return [];
+  }
+}
+
+// Helper function to find the most recent rotating log file
+function findLatestRotatingLog(basePath: string): string | null {
+  const logs = findAllRotatingLogs(basePath);
+  return logs.length > 0 ? logs[0] : null;
+}
+
+// Parse a log line into a structured LogEntry
+function parseLogLine(line: string, service: string, filePath: string): LogEntry | null {
+  try {
+    // Try to parse JSON logs (Winston format)
+    try {
+      const parsed = JSON.parse(line);
+      if (parsed.timestamp || parsed.time || parsed.date) {
+        return {
+          timestamp: parsed.timestamp || parsed.time || parsed.date,
+          service: SERVICE_MAPPING[service] || service,
+          message: parsed.message || line,
+          level: parsed.level || determineLogLevel(service, line),
+          logFile: path.basename(filePath),
+        };
+      }
+    } catch (e) {
+      // Not JSON, continue with regular parsing
+    }
+
+    // Extract timestamp if possible (common formats)
+    let timestamp = new Date().toISOString();
+    const timestampMatch =
+      line.match(/\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?Z/) || line.match(/\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}/);
+
+    if (timestampMatch) {
+      timestamp = timestampMatch[0];
+    }
+
+    return {
+      timestamp,
+      service: SERVICE_MAPPING[service] || service,
+      message: line,
+      level: determineLogLevel(service, line),
+      logFile: path.basename(filePath),
+    };
+  } catch (error) {
+    console.error('Error parsing log line:', error);
     return null;
   }
 }
+
+// Read recent logs from a file
+async function readRecentLogs(filePath: string, service: string, limit: number = 100): Promise<LogEntry[]> {
+  if (!fileExists(filePath)) {
+    return [];
+  }
+
+  const logs: LogEntry[] = [];
+  try {
+    // Use a reverse line reader for efficiency (read from end of file)
+    const exec = promisify(require('child_process').exec);
+    const { stdout } = await exec(`tail -n ${limit} ${filePath}`);
+
+    const lines = stdout
+      .split('\n')
+      .filter((line: { trim: () => { (): any; new (): any; length: number } }) => line.trim().length > 0);
+
+    for (const line of lines) {
+      const entry = parseLogLine(line, service, filePath);
+      if (entry) {
+        logs.push(entry);
+      }
+    }
+
+    return logs;
+  } catch (error) {
+    console.error(`Error reading logs from ${filePath}:`, error);
+    return [];
+  }
+}
+
+// Filter logs based on criteria
+function filterLogs(logs: LogEntry[], filters: LogFilter): LogEntry[] {
+  return logs.filter((log) => {
+    // Filter by service
+    if (filters.service && filters.service !== 'all' && log.service !== filters.service) {
+      return false;
+    }
+
+    // Filter by level
+    if (filters.level && filters.level !== 'all' && log.level !== filters.level) {
+      return false;
+    }
+
+    // Filter by date range
+    if (filters.startDate) {
+      const logDate = new Date(log.timestamp);
+      const startDate = new Date(filters.startDate);
+      if (logDate < startDate) {
+        return false;
+      }
+    }
+
+    if (filters.endDate) {
+      const logDate = new Date(log.timestamp);
+      const endDate = new Date(filters.endDate);
+      // Set to end of day
+      endDate.setHours(23, 59, 59, 999);
+      if (logDate > endDate) {
+        return false;
+      }
+    }
+
+    // Filter by search term
+    if (filters.searchTerm && filters.searchTerm.trim() !== '') {
+      const searchLower = filters.searchTerm.toLowerCase();
+      return (
+        log.message.toLowerCase().includes(searchLower) ||
+        log.service.toLowerCase().includes(searchLower) ||
+        log.level.toLowerCase().includes(searchLower)
+      );
+    }
+
+    return true;
+  });
+}
+
+// API endpoint to retrieve filtered logs
+app.get('/api/logs', async (req, res) => {
+  try {
+    const filters: LogFilter = {
+      service: (req.query.service as string) || 'all',
+      level: (req.query.level as string) || 'all',
+      startDate: req.query.startDate ? String(req.query.startDate) : null,
+      endDate: req.query.endDate ? String(req.query.endDate) : null,
+      searchTerm: req.query.searchTerm ? String(req.query.searchTerm) : '',
+      limit: req.query.limit ? parseInt(String(req.query.limit)) : 1000,
+    };
+
+    // Get available log files
+    const logFiles: { [key: string]: string } = { ...LOG_PATHS };
+
+    // Find the latest rotating log for express
+    const latestRotatingLog = findLatestRotatingLog(logFiles['express-rotating']);
+    if (latestRotatingLog) {
+      logFiles['express-rotating'] = latestRotatingLog;
+    }
+
+    // Find additional rotating logs if date filters are applied
+    if (filters.startDate || filters.endDate) {
+      const allRotatingLogs = findAllRotatingLogs(LOG_PATHS['express-rotating']);
+
+      // Add each rotating log with its own key
+      allRotatingLogs.forEach((logPath, index) => {
+        if (index > 0) {
+          // Skip the first one as it's already included
+          logFiles[`express-rotating-${index}`] = logPath;
+        }
+      });
+    }
+
+    // Gather logs from all available files
+    const allLogs: LogEntry[] = [];
+
+    for (const [service, filePath] of Object.entries(logFiles)) {
+      const serviceLogs = await readRecentLogs(
+        filePath,
+        service,
+        // Use a higher limit for initial read when filtering
+        filters.searchTerm || filters.startDate || filters.endDate ? 5000 : filters.limit || 1000,
+      );
+
+      allLogs.push(...serviceLogs);
+    }
+
+    // Apply filters
+    const filteredLogs = filterLogs(allLogs, filters);
+
+    // Sort by timestamp (newest first) and limit results
+    const sortedLogs = filteredLogs
+      .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
+      .slice(0, filters.limit || 1000);
+
+    res.json(sortedLogs);
+  } catch (error) {
+    console.error('Error retrieving logs:', error);
+    res.status(500).json({ error: 'Failed to retrieve logs' });
+  }
+});
 
 // SSE endpoint for log streaming
 app.get('/api/logs/stream', (req, res) => {

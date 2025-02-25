@@ -12,12 +12,17 @@ import cors from 'cors';
 import { EventEmitter } from 'events';
 import express from 'express';
 import rateLimit from 'express-rate-limit';
+import fs from 'fs';
 import helmet from 'helmet';
 import { createServer } from 'http';
+import path from 'path';
 import { Tail } from 'tail';
 
 // Increase max listeners to handle multiple SSE connections
 EventEmitter.defaultMaxListeners = 30;
+
+const EXPRESS_LOG_DIRECTORY = path.resolve(process.env.EXPRESS_LOG_DIR || '/var/log');
+const PM2_LOG_DIRECTORY = path.resolve(process.env.PM2_LOG_DIR || '/var/log/.pm2');
 
 const app = express();
 const httpServer = createServer(app);
@@ -45,6 +50,14 @@ interface ServiceStatus {
   cpu: string;
 }
 
+interface LogEntry {
+  timestamp: string;
+  service: string;
+  message: string;
+  level: 'info' | 'warn' | 'error';
+  logFile?: string;
+}
+
 // SSE client management
 const clients = new Set<express.Response>();
 
@@ -54,11 +67,21 @@ function sendEventToAll(event: string, data: any) {
   });
 }
 
+function getCurrentDate(): string {
+  const date = new Date();
+  const month = date.toLocaleString('en-US', { month: 'long' });
+  const day = date.getDate();
+  const year = date.getFullYear();
+  return `${month}-${day}-${year}`;
+}
+
 // Log file paths
 const LOG_PATHS = {
-  express: '/var/log/express.log',
+  'express-rotating': `${EXPRESS_LOG_DIRECTORY}/rotating-logs-${getCurrentDate()}.log`,
+  'express-error': `${EXPRESS_LOG_DIRECTORY}/keepwatching-error.log`,
   nginx: '/var/log/nginx/access.log',
-  pm2: '/var/log/.pm2/pm2.log',
+  'pm2-out': `${PM2_LOG_DIRECTORY}/keepwatching-server-out-0.log`,
+  'pm2-error': `${PM2_LOG_DIRECTORY}/keepwatching-server-error-0.log`,
 };
 
 app.use(accountRouter);
@@ -86,6 +109,44 @@ app.get('/api/status/stream', (req, res) => {
   });
 });
 
+// Helper function to check if a file exists
+function fileExists(path: string): boolean {
+  try {
+    fs.accessSync(path, fs.constants.R_OK);
+    return true;
+  } catch (err) {
+    return false;
+  }
+}
+
+// Helper function to find the most recent rotating log file
+function findLatestRotatingLog(basePath: string): string | null {
+  try {
+    const dir = path.dirname(basePath);
+    const baseFileName = path.basename(basePath);
+    const prefix = baseFileName.split('-')[0] + '-' + baseFileName.split('-')[1];
+
+    const files = fs.readdirSync(dir);
+    const rotatingLogs = files.filter((file) => file.startsWith(prefix));
+
+    if (rotatingLogs.length === 0) {
+      return null;
+    }
+
+    // Sort by modification time (most recent first)
+    rotatingLogs.sort((a, b) => {
+      const statA = fs.statSync(path.join(dir, a));
+      const statB = fs.statSync(path.join(dir, b));
+      return statB.mtime.getTime() - statA.mtime.getTime();
+    });
+
+    return path.join(dir, rotatingLogs[0]);
+  } catch (err) {
+    console.error('Error finding latest rotating log:', err);
+    return null;
+  }
+}
+
 // SSE endpoint for log streaming
 app.get('/api/logs/stream', (req, res) => {
   res.writeHead(200, {
@@ -95,36 +156,88 @@ app.get('/api/logs/stream', (req, res) => {
   });
 
   const tails: { [key: string]: Tail } = {};
+  const availableLogs: string[] = [];
+  const unavailableLogs: string[] = [];
+
+  // Find the latest rotating log file for express
+  const rotatingLogPath = findLatestRotatingLog(LOG_PATHS['express-rotating']);
+  if (rotatingLogPath) {
+    LOG_PATHS['express-rotating'] = rotatingLogPath;
+  }
 
   // Start tailing each log file
   Object.entries(LOG_PATHS).forEach(([service, logPath]) => {
-    try {
-      const tail = new Tail(logPath);
+    if (fileExists(logPath)) {
+      availableLogs.push(service);
+      try {
+        const tail = new Tail(logPath, { follow: true, logger: console });
 
-      tail.on('line', (data) => {
-        const logEntry = {
-          timestamp: new Date().toISOString(),
-          service,
-          message: data,
-          level: determineLogLevel(data),
-        };
+        tail.on('line', (data) => {
+          const logEntry: LogEntry = {
+            timestamp: new Date().toISOString(),
+            service: service.includes('express') ? 'express' : service.includes('pm2') ? 'pm2' : service,
+            message: data,
+            level: determineLogLevel(service, data),
+            logFile: path.basename(logPath),
+          };
 
-        res.write(`data: ${JSON.stringify(logEntry)}\n\n`);
-      });
+          res.write(`data: ${JSON.stringify(logEntry)}\n\n`);
+        });
 
-      tail.on('error', (error) => {
-        console.error(`Error tailing ${service} log:`, error);
-      });
+        tail.on('error', (error) => {
+          console.error(`Error tailing ${service} log:`, error);
+          // Send error notification to client
+          const errorEntry: LogEntry = {
+            timestamp: new Date().toISOString(),
+            service: service.includes('express') ? 'express' : service.includes('pm2') ? 'pm2' : service,
+            message: `Error reading log: ${error.message}`,
+            level: 'error',
+            logFile: path.basename(logPath),
+          };
+          res.write(`data: ${JSON.stringify(errorEntry)}\n\n`);
+        });
 
-      tails[service] = tail;
-    } catch (error) {
-      console.error(`Error setting up tail for ${service}:`, error);
+        tails[service] = tail;
+      } catch (error) {
+        console.error(`Error setting up tail for ${service}:`, error);
+      }
+    } else {
+      unavailableLogs.push(service);
+      // Notify client that this log file is not available
+      const notFoundEntry: LogEntry = {
+        timestamp: new Date().toISOString(),
+        service: service.includes('express') ? 'express' : service.includes('pm2') ? 'pm2' : service,
+        message: `Log file not found: ${logPath}`,
+        level: 'warn',
+        logFile: path.basename(logPath),
+      };
+      res.write(`data: ${JSON.stringify(notFoundEntry)}\n\n`);
     }
   });
 
+  // Log summary of available/unavailable logs
+  console.log(`Streaming logs: Available: [${availableLogs.join(', ')}], Unavailable: [${unavailableLogs.join(', ')}]`);
+
+  // Initial status message
+  const statusEntry: LogEntry = {
+    timestamp: new Date().toISOString(),
+    service: 'system',
+    message: `Log streaming started. Available logs: [${availableLogs.join(', ')}]${
+      unavailableLogs.length > 0 ? `, Unavailable logs: [${unavailableLogs.join(', ')}]` : ''
+    }`,
+    level: 'info',
+  };
+  res.write(`data: ${JSON.stringify(statusEntry)}\n\n`);
+
   // Cleanup on connection close
   req.on('close', () => {
-    Object.values(tails).forEach((tail) => tail.unwatch());
+    Object.values(tails).forEach((tail) => {
+      try {
+        tail.unwatch();
+      } catch (error) {
+        console.error('Error unwatching tail:', error);
+      }
+    });
   });
 });
 
@@ -280,7 +393,12 @@ function parseExpressStatus(stdout: string): ServiceStatus {
 }
 
 // Helper functions
-function determineLogLevel(logLine: string): 'info' | 'warn' | 'error' {
+function determineLogLevel(service: string, logLine: string): 'info' | 'warn' | 'error' {
+  // If the log is from an error log file, mark it as error level
+  if (service.includes('error')) {
+    return 'error';
+  }
+
   const line = logLine.toLowerCase();
   if (line.includes('error') || line.includes('err]') || line.includes('exception')) {
     return 'error';

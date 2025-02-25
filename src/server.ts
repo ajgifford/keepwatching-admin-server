@@ -68,15 +68,6 @@ interface LogFilter {
   limit?: number;
 }
 
-// SSE client management
-const clients = new Set<express.Response>();
-
-function sendEventToAll(event: string, data: any) {
-  clients.forEach((client) => {
-    client.write(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`);
-  });
-}
-
 function getCurrentDate(): string {
   const date = new Date();
   const month = date.toLocaleString('en-US', { month: 'long' });
@@ -85,7 +76,6 @@ function getCurrentDate(): string {
   return `${month}-${day}-${year}`;
 }
 
-// Log file paths
 const LOG_PATHS = {
   'express-rotating': `${EXPRESS_LOG_DIRECTORY}/rotating-logs-${getCurrentDate()}.log`,
   'express-error': `${EXPRESS_LOG_DIRECTORY}/keepwatching-error.log`,
@@ -114,27 +104,6 @@ app.get('/api/services/status', async (req, res) => {
     console.error('Error retrieving service statuses:', error);
     res.status(500).json({ error: 'Failed to retrieve service statuses' });
   }
-});
-
-// SSE endpoint for service status updates
-app.get('/api/status/stream', (req, res) => {
-  res.writeHead(200, {
-    'Content-Type': 'text/event-stream',
-    'Cache-Control': 'no-cache',
-    Connection: 'keep-alive',
-  });
-
-  clients.add(res);
-
-  // Send initial status
-  checkServicesStatus().then((status) => {
-    res.write(`data: ${JSON.stringify(status)}\n\n`);
-  });
-
-  // Remove client on connection close
-  req.on('close', () => {
-    clients.delete(res);
-  });
 });
 
 // Helper function to check if a file exists
@@ -646,34 +615,16 @@ function formatBytes(bytes: number): string {
   return `${value.toFixed(1)}${units[unitIndex]}`;
 }
 
-// Start monitoring services
-let monitoringInterval: NodeJS.Timeout;
-
-function startMonitoring() {
-  // Initial check
-  checkServicesStatus().then((statuses) => {
-    sendEventToAll('status', statuses);
-  });
-
-  // Regular checks
-  monitoringInterval = setInterval(async () => {
-    const statuses = await checkServicesStatus();
-    sendEventToAll('status', statuses);
-  }, 30000); // Check every 30 seconds
-}
-
 // Start server
 const PORT = process.env.PORT || 3001;
 app.use(errorHandler);
 
 httpServer.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
-  startMonitoring();
 });
 
 // Cleanup on server shutdown
 process.on('SIGTERM', () => {
-  clearInterval(monitoringInterval);
   httpServer.close(() => {
     console.log('Server shutdown complete');
   });

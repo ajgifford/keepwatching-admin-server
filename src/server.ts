@@ -106,6 +106,16 @@ app.use(accountRouter);
 app.use(contentRouter);
 app.use(systemNotificationRouter);
 
+app.get('/api/services/status', async (req, res) => {
+  try {
+    const statuses = await checkServicesStatus();
+    res.json(statuses);
+  } catch (error) {
+    console.error('Error retrieving service statuses:', error);
+    res.status(500).json({ error: 'Failed to retrieve service statuses' });
+  }
+});
+
 // SSE endpoint for service status updates
 app.get('/api/status/stream', (req, res) => {
   res.writeHead(200, {

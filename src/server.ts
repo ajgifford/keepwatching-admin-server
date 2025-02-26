@@ -18,6 +18,7 @@ import { createServer } from 'http';
 import path from 'path';
 import { Tail } from 'tail';
 import { promisify } from 'util';
+import { time } from 'console';
 
 // Increase max listeners to handle multiple SSE connections
 EventEmitter.defaultMaxListeners = 30;
@@ -167,11 +168,36 @@ function parseLogLine(line: string, service: string, filePath: string): LogEntry
 
     // Extract timestamp if possible (common formats)
     let timestamp = new Date().toISOString();
-    const timestampMatch =
-      line.match(/\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?Z/) || line.match(/\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}/);
+    
+    // PM2 format: [Feb-23-2025 02:00:00]
+    const pm2TimestampMatch = line.match(/\[(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)-\d{2}-\d{4}\s\d{2}:\d{2}:\d{2}\]/);
+    if (pm2TimestampMatch) {
+      // Convert PM2 format to ISO string
+      const dateStr = pm2TimestampMatch[0].slice(1, -1); // Remove the brackets
+      timestamp = new Date(dateStr).toISOString();
+    } 
+    // Nginx format: [26/Feb/2025:13:09:48 -0600]
+    else if (line.includes('/')) {
+      const nginxTimestampMatch = line.match(/\[(\d{2}\/(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\/\d{4}:\d{2}:\d{2}:\d{2}\s[+-]\d{4})\]/);
+      if (nginxTimestampMatch) {
+        // Convert Nginx format to ISO string
+        const dateStr = nginxTimestampMatch[1];
+        // Parse with a custom function since this format is non-standard
+        const parsedDate = parseNginxDate(dateStr);
+        if (parsedDate) {
+          timestamp = parsedDate.toISOString();
+        }
+      }
+    } 
+    // Standard ISO or similar formats
+    else {
+      const standardTimestampMatch = 
+        line.match(/\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?Z/) || 
+        line.match(/\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}/);
 
-    if (timestampMatch) {
-      timestamp = timestampMatch[0];
+      if (standardTimestampMatch) {
+        timestamp = standardTimestampMatch[0];
+      }
     }
 
     // Enhanced error detection
@@ -751,6 +777,34 @@ function formatBytes(bytes: number): string {
   }
 
   return `${value.toFixed(1)}${units[unitIndex]}`;
+}
+
+function parseNginxDate(dateStr: string): Date | null {
+  try {
+    // Format example: 26/Feb/2025:13:09:48 -0600
+    const parts = dateStr.match(/(\d{2})\/(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\/(\d{4}):(\d{2}):(\d{2}):(\d{2})\s([+-]\d{4})/);
+    
+    if (!parts) return null;
+    
+    const day = parts[1];
+    const month = {
+      'Jan': '01', 'Feb': '02', 'Mar': '03', 'Apr': '04', 
+      'May': '05', 'Jun': '06', 'Jul': '07', 'Aug': '08', 
+      'Sep': '09', 'Oct': '10', 'Nov': '11', 'Dec': '12'
+    }[parts[2]];
+    const year = parts[3];
+    const hour = parts[4];
+    const minute = parts[5];
+    const second = parts[6];
+    const timezone = parts[7];
+    
+    // Construct ISO string
+    const isoString = `${year}-${month}-${day}T${hour}:${minute}:${second}${timezone.replace(':', '')}`;
+    return new Date(isoString);
+  } catch (error) {
+    console.error('Error parsing Nginx date:', error, dateStr);
+    return null;
+  }
 }
 
 // Start server

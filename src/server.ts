@@ -752,9 +752,15 @@ function determineLogLevel(service: string, logLine: string): 'info' | 'warn' | 
   return 'info';
 }
 
-function formatUptime(ms: number): string {
-  if (!ms) return 'N/A';
-  const seconds = Math.floor(ms / 1000);
+function formatUptime(timestamp: number): string {
+  if (!timestamp) return 'N/A';
+  
+  // Calculate duration in milliseconds between now and the uptime timestamp
+  const uptimeMs = Date.now() - timestamp;
+  
+  if (uptimeMs < 0) return 'N/A'; // Invalid timestamp
+  
+  const seconds = Math.floor(uptimeMs / 1000);
   const minutes = Math.floor(seconds / 60);
   const hours = Math.floor(minutes / 60);
   const days = Math.floor(hours / 24);

@@ -174,11 +174,14 @@ function parseLogLine(line: string, service: string, filePath: string): LogEntry
       timestamp = timestampMatch[0];
     }
 
+    // Enhanced error detection
+    const level = determineLogLevel(service, line);
+
     return {
       timestamp,
       service: SERVICE_MAPPING[service] || service,
       message: line,
-      level: determineLogLevel(service, line),
+      level,
       logFile: path.basename(filePath),
     };
   } catch (error) {
@@ -197,17 +200,85 @@ async function readRecentLogs(filePath: string, service: string, limit: number =
   try {
     // Use a reverse line reader for efficiency (read from end of file)
     const exec = promisify(require('child_process').exec);
-    const { stdout } = await exec(`tail -n ${limit} ${filePath}`);
+    const { stdout } = await exec(`tail -n ${limit * 2} ${filePath}`); // Increase line count to catch multi-line errors
 
     const lines = stdout
       .split('\n')
       .filter((line: { trim: () => { (): any; new (): any; length: number } }) => line.trim().length > 0);
 
-    for (const line of lines) {
+    // Process lines with error consolidation
+    let currentErrorEntry: LogEntry | null = null;
+    let isCollectingStackTrace = false;
+
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i];
+
+      // Check if this is the start of an error (contains Error: or ValidationError:)
+      if (
+        !isCollectingStackTrace &&
+        (line.includes('Error:') || line.includes('Exception:') || /\w+Error:/.test(line))
+      ) {
+        // Start a new error entry
+        currentErrorEntry = parseLogLine(line, service, filePath);
+        isCollectingStackTrace = true;
+
+        // Skip adding this line as we'll collect the full stack trace
+        continue;
+      }
+
+      // If we're collecting a stack trace
+      if (isCollectingStackTrace) {
+        // Check if this line is part of the stack trace
+        if (
+          line.trim().startsWith('at ') ||
+          line.match(/^\s+at\s/) ||
+          line.includes('node:') ||
+          line.trim().startsWith('{') ||
+          line.trim().startsWith('}') ||
+          line.includes('code:') ||
+          line.includes('help:')
+        ) {
+          // Append to the current error message
+          if (currentErrorEntry) {
+            currentErrorEntry.message += '\n' + line;
+          }
+
+          // Check if this is the end of a stack trace (usually ends with closing brace or last 'at' line)
+          const nextLine = i < lines.length - 1 ? lines[i + 1] : '';
+          if (
+            line.trim() === '}' ||
+            (line.startsWith('  at ') && !nextLine.startsWith('  at ')) ||
+            (line.includes('node:') && !nextLine.includes('at '))
+          ) {
+            // End of stack trace
+            if (currentErrorEntry) {
+              logs.push(currentErrorEntry);
+              currentErrorEntry = null;
+              isCollectingStackTrace = false;
+            }
+          }
+
+          continue;
+        } else {
+          // Not part of stack trace anymore, add the collected error entry and reset
+          if (currentErrorEntry) {
+            logs.push(currentErrorEntry);
+            currentErrorEntry = null;
+            isCollectingStackTrace = false;
+          }
+        }
+      }
+
+      // Process regular (non-error) line
       const entry = parseLogLine(line, service, filePath);
       if (entry) {
         logs.push(entry);
       }
+    }
+
+    // If we ended while still collecting an error, add it
+    if (currentErrorEntry) {
+      logs.push(currentErrorEntry);
     }
 
     return logs;
@@ -344,17 +415,67 @@ app.get('/api/logs/stream', (req, res) => {
     LOG_PATHS['express-rotating'] = rotatingLogPath;
   }
 
+  const errorBuffers: { [key: string]: string[] } = {};
+  const errorTimers: { [key: string]: NodeJS.Timeout } = {};
+  const ERROR_BUFFER_TIMEOUT = 500; // ms to wait for more error lines
+
   // Start tailing each log file
   Object.entries(LOG_PATHS).forEach(([service, logPath]) => {
+    errorBuffers[service] = [];
+
     if (fileExists(logPath)) {
       availableLogs.push(service);
       try {
         const tail = new Tail(logPath, { follow: true, logger: console });
 
         tail.on('line', (data) => {
+          // Check if this is potentially part of an error message
+          const isErrorLine =
+            data.includes('Error:') ||
+            data.includes('Exception:') ||
+            /\w+Error:/.test(data) ||
+            data.startsWith('at ') ||
+            data.match(/^\s+at\s/) ||
+            data.includes('node:') ||
+            data.trim().startsWith('{') ||
+            data.trim().startsWith('}') ||
+            data.includes('code:') ||
+            data.includes('help:');
+
+          const isStartOfError = data.includes('Error:') || data.includes('Exception:') || /\w+Error:/.test(data);
+
+          // Reset buffer on new error start
+          if (isStartOfError) {
+            sendBufferedError(service); // Send any previous buffered error
+            errorBuffers[service] = [data];
+
+            // Set a timer to send this error if no more lines come in
+            if (errorTimers[service]) clearTimeout(errorTimers[service]);
+            errorTimers[service] = setTimeout(() => sendBufferedError(service), ERROR_BUFFER_TIMEOUT);
+
+            return;
+          }
+
+          // Add line to error if we're collecting an error and this looks like part of it
+          if (errorBuffers[service].length > 0 && isErrorLine) {
+            errorBuffers[service].push(data);
+
+            // Reset the timer
+            if (errorTimers[service]) clearTimeout(errorTimers[service]);
+            errorTimers[service] = setTimeout(() => sendBufferedError(service), ERROR_BUFFER_TIMEOUT);
+
+            return;
+          }
+
+          // If we have a buffered error and this isn't part of it, send the error
+          if (errorBuffers[service].length > 0) {
+            sendBufferedError(service);
+          }
+
+          // Process normal line
           const logEntry: LogEntry = {
             timestamp: new Date().toISOString(),
-            service: service.includes('express') ? 'express' : service.includes('pm2') ? 'pm2' : service,
+            service: SERVICE_MAPPING[service] || service,
             message: data,
             level: determineLogLevel(service, data),
             logFile: path.basename(logPath),
@@ -363,20 +484,26 @@ app.get('/api/logs/stream', (req, res) => {
           res.write(`data: ${JSON.stringify(logEntry)}\n\n`);
         });
 
-        tail.on('error', (error) => {
-          console.error(`Error tailing ${service} log:`, error);
-          // Send error notification to client
-          const errorEntry: LogEntry = {
-            timestamp: new Date().toISOString(),
-            service: service.includes('express') ? 'express' : service.includes('pm2') ? 'pm2' : service,
-            message: `Error reading log: ${error.message}`,
-            level: 'error',
-            logFile: path.basename(logPath),
-          };
-          res.write(`data: ${JSON.stringify(errorEntry)}\n\n`);
-        });
+        // Helper function to send buffered error
+        function sendBufferedError(svc: string) {
+          if (errorBuffers[svc].length > 0) {
+            const combinedMessage = errorBuffers[svc].join('\n');
+            const logEntry: LogEntry = {
+              timestamp: new Date().toISOString(),
+              service: SERVICE_MAPPING[svc] || svc,
+              message: combinedMessage,
+              level: 'error',
+              logFile: path.basename(logPath),
+            };
 
-        tails[service] = tail;
+            res.write(`data: ${JSON.stringify(logEntry)}\n\n`);
+            errorBuffers[svc] = [];
+            if (errorTimers[svc]) {
+              clearTimeout(errorTimers[svc]);
+              delete errorTimers[svc];
+            }
+          }
+        }
       } catch (error) {
         console.error(`Error setting up tail for ${service}:`, error);
       }
@@ -416,6 +543,9 @@ app.get('/api/logs/stream', (req, res) => {
       } catch (error) {
         console.error('Error unwatching tail:', error);
       }
+    });
+    Object.values(errorTimers).forEach((timer) => {
+      clearTimeout(timer);
     });
   });
 });
@@ -579,7 +709,15 @@ function determineLogLevel(service: string, logLine: string): 'info' | 'warn' | 
   }
 
   const line = logLine.toLowerCase();
-  if (line.includes('error') || line.includes('err]') || line.includes('exception')) {
+  if (
+    line.includes('error') ||
+    line.includes('err]') ||
+    line.includes('exception') ||
+    /\w+error:/.test(line.toLowerCase()) ||
+    line.includes('stack trace') ||
+    line.includes('code:') ||
+    (line.startsWith('at ') && line.includes('/'))
+  ) {
     return 'error';
   }
   if (line.includes('warn') || line.includes('warning')) {

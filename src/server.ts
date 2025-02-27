@@ -4,6 +4,7 @@ import { logger } from './logger/logger';
 import { errorHandler } from './middleware/errorMiddleware';
 import accountRouter from './routes/accountManagementRouter';
 import contentRouter from './routes/contentRouter';
+import logRouter from './routes/logRouter';
 import systemNotificationRouter from './routes/systemNotificationsRouter';
 import bodyParser from 'body-parser';
 import { exec } from 'child_process';
@@ -18,7 +19,6 @@ import { createServer } from 'http';
 import path from 'path';
 import { Tail } from 'tail';
 import { promisify } from 'util';
-import { time } from 'console';
 
 // Increase max listeners to handle multiple SSE connections
 EventEmitter.defaultMaxListeners = 30;
@@ -95,6 +95,7 @@ const SERVICE_MAPPING: { [key: string]: string } = {
 
 app.use(accountRouter);
 app.use(contentRouter);
+app.use(logRouter);
 app.use(systemNotificationRouter);
 
 app.get('/api/services/status', async (req, res) => {
@@ -168,17 +169,21 @@ function parseLogLine(line: string, service: string, filePath: string): LogEntry
 
     // Extract timestamp if possible (common formats)
     let timestamp = new Date().toISOString();
-    
+
     // PM2 format: [Feb-23-2025 02:00:00]
-    const pm2TimestampMatch = line.match(/\[(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)-\d{2}-\d{4}\s\d{2}:\d{2}:\d{2}\]/);
+    const pm2TimestampMatch = line.match(
+      /\[(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)-\d{2}-\d{4}\s\d{2}:\d{2}:\d{2}\]/,
+    );
     if (pm2TimestampMatch) {
       // Convert PM2 format to ISO string
       const dateStr = pm2TimestampMatch[0].slice(1, -1); // Remove the brackets
       timestamp = new Date(dateStr).toISOString();
-    } 
+    }
     // Nginx format: [26/Feb/2025:13:09:48 -0600]
     else if (line.includes('/')) {
-      const nginxTimestampMatch = line.match(/\[(\d{2}\/(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\/\d{4}:\d{2}:\d{2}:\d{2}\s[+-]\d{4})\]/);
+      const nginxTimestampMatch = line.match(
+        /\[(\d{2}\/(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\/\d{4}:\d{2}:\d{2}:\d{2}\s[+-]\d{4})\]/,
+      );
       if (nginxTimestampMatch) {
         // Convert Nginx format to ISO string
         const dateStr = nginxTimestampMatch[1];
@@ -188,12 +193,11 @@ function parseLogLine(line: string, service: string, filePath: string): LogEntry
           timestamp = parsedDate.toISOString();
         }
       }
-    } 
+    }
     // Standard ISO or similar formats
     else {
-      const standardTimestampMatch = 
-        line.match(/\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?Z/) || 
-        line.match(/\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}/);
+      const standardTimestampMatch =
+        line.match(/\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?Z/) || line.match(/\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}/);
 
       if (standardTimestampMatch) {
         timestamp = standardTimestampMatch[0];
@@ -805,12 +809,12 @@ function determineLogLevel(service: string, logLine: string): 'info' | 'warn' | 
 
 function formatUptime(timestamp: number): string {
   if (!timestamp) return 'N/A';
-  
+
   // Calculate duration in milliseconds between now and the uptime timestamp
   const uptimeMs = Date.now() - timestamp;
-  
+
   if (uptimeMs < 0) return 'N/A'; // Invalid timestamp
-  
+
   const seconds = Math.floor(uptimeMs / 1000);
   const minutes = Math.floor(seconds / 60);
   const hours = Math.floor(minutes / 60);
@@ -839,22 +843,33 @@ function formatBytes(bytes: number): string {
 function parseNginxDate(dateStr: string): Date | null {
   try {
     // Format example: 26/Feb/2025:13:09:48 -0600
-    const parts = dateStr.match(/(\d{2})\/(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\/(\d{4}):(\d{2}):(\d{2}):(\d{2})\s([+-]\d{4})/);
-    
+    const parts = dateStr.match(
+      /(\d{2})\/(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\/(\d{4}):(\d{2}):(\d{2}):(\d{2})\s([+-]\d{4})/,
+    );
+
     if (!parts) return null;
-    
+
     const day = parts[1];
     const month = {
-      'Jan': '01', 'Feb': '02', 'Mar': '03', 'Apr': '04', 
-      'May': '05', 'Jun': '06', 'Jul': '07', 'Aug': '08', 
-      'Sep': '09', 'Oct': '10', 'Nov': '11', 'Dec': '12'
+      Jan: '01',
+      Feb: '02',
+      Mar: '03',
+      Apr: '04',
+      May: '05',
+      Jun: '06',
+      Jul: '07',
+      Aug: '08',
+      Sep: '09',
+      Oct: '10',
+      Nov: '11',
+      Dec: '12',
     }[parts[2]];
     const year = parts[3];
     const hour = parts[4];
     const minute = parts[5];
     const second = parts[6];
     const timezone = parts[7];
-    
+
     // Construct ISO string
     const isoString = `${year}-${month}-${day}T${hour}:${minute}:${second}${timezone.replace(':', '')}`;
     return new Date(isoString);

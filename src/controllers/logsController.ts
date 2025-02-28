@@ -207,7 +207,7 @@ function parseNginxLogLine(line: string, logFile: string): NginxLogEntry | null 
     logFile: path.basename(logFile),
     remoteAddr: match[1],
     remoteUser: match[2],
-    timestamp: match[4],
+    timestamp: normalizeTimestamp(match[4]),
     request: match[5],
     status: parseInt(match[6], 10),
     bytesSent: parseInt(match[6], 10),
@@ -287,4 +287,34 @@ function parseErrorLogFile(logContent: string, service: string, logFile: string)
   }
   
   return errors;
+}
+
+function normalizeTimestamp(timestamp: string): string {
+  if (timestamp.includes('/') && timestamp.includes(':')) {
+    // Parse Nginx format
+    const regex = /(\d+)\/(\w+)\/(\d+):(\d+):(\d+):(\d+) ([+-]\d+)/;
+    const match = timestamp.match(regex);
+    
+    if (match) {
+      const [, day, month, year, hours, minutes, seconds, timezone] = match;
+      const months: { [key: string]: number } = {
+        Jan: 0, Feb: 1, Mar: 2, Apr: 3, May: 4, Jun: 5,
+        Jul: 6, Aug: 7, Sep: 8, Oct: 9, Nov: 10, Dec: 11
+      };
+      
+      const date = new Date(Date.UTC(
+        parseInt(year), 
+        months[month],
+        parseInt(day),
+        parseInt(hours),
+        parseInt(minutes),
+        parseInt(seconds)
+      ));
+      
+      return date.toISOString();
+    }
+  }
+  
+  // Already in ISO format or other standard format
+  return new Date(timestamp).toISOString();
 }

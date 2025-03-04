@@ -61,14 +61,14 @@ const logRegex = /\[([\w\-]+ [\d:]+)\] (?:\x1b?\[\d+m)?(\w+)(?:\x1b?\s?\[\d+m)? 
 function getCurrentDate(): string {
   const date = new Date();
   const month = date.toLocaleString('en-US', { month: 'long' });
-  const day = date.getDate();
+  const day = date.getDate().toString().padStart(2, '0');
   const year = date.getFullYear();
   return `${month}-${day}-${year}`;
 }
 
-const LOG_FILES: Record<string, string> = {
+const LOG_PATHS: Record<string, string> = {
   'nginx': '/var/log/nginx/access.log',
-  'KeepWatching-HTTP': `${EXPRESS_LOG_DIRECTORY}/rotating-logs-${getCurrentDate()}.log`,
+  'KeepWatching-HTTP': `${EXPRESS_LOG_DIRECTORY}/keepwatching-${getCurrentDate()}.log`,
   'KeepWatching-HTTP-Error': `${EXPRESS_LOG_DIRECTORY}/keepwatching-error.log`,
   'KeepWatching-Console': `${PM2_LOG_DIRECTORY}/keepwatching-server-out-0.log`,
   'KeepWatching-Console-Error': `${PM2_LOG_DIRECTORY}/keepwatching-server-error-0.log`,
@@ -83,7 +83,7 @@ const SERVICE_MAPPING: { [key: string]: string } = {
 };
 
 export const getLogs = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
-  const filter: LogFilter = {
+  const filters: LogFilter = {
     service: req.query.service as string,
     level: req.query.level as string,
     startDate: req.query.startDate as string,
@@ -92,14 +92,64 @@ export const getLogs = asyncHandler(async (req: Request, res: Response, next: Ne
     limit: req.query.limit ? parseInt(req.query.limit as string, 10) : undefined,
   };
 
+  const logFiles: { [key: string]: string } = { ...LOG_PATHS };
+
+  // Find the latest rotating log for express
+  const latestRotatingLog = findLatestRotatingLog(logFiles['KeepWatching-HTTP']);
+  if (latestRotatingLog) {
+    logFiles['KeepWatching-HTTP'] = latestRotatingLog;
+  }
+
+  // Find additional rotating logs if date filters are applied
+  if (filters.startDate || filters.endDate) {
+    const allRotatingLogs = findAllRotatingLogs(LOG_PATHS['KeepWatching-HTTP']);
+
+    // Add each rotating log with its own key
+    allRotatingLogs.forEach((logPath, index) => {
+      if (index > 0) {
+        // Skip the first one as it's already included
+        logFiles[`KeepWatching-HTTP-${index}`] = logPath;
+      }
+    });
+    
+  }
+
   let logs: LogEntry[] = [];
-  for (const [logType, file] of Object.entries(LOG_FILES)) {
-    const service = SERVICE_MAPPING[logType];
+  for (const [logType, file] of Object.entries(logFiles)) {
+    const baseLogType = logType.replace(/-\d+$/, '');
+    const service = SERVICE_MAPPING[baseLogType];
     logs = logs.concat(loadLogs(file, service));
   }
 
-  res.json(filterLogs(logs, filter));
+  res.json(filterLogs(logs, filters));
 });
+
+function findAllRotatingLogs(basePath: string): string[] {
+  try {
+    const dir = path.dirname(basePath);
+    const baseFileName = path.basename(basePath);
+    const prefix = baseFileName.split('-')[0] + '-' + baseFileName.split('-')[1];
+
+    const files = fs.readdirSync(dir);
+    const rotatingLogs = files.filter((file) => file.startsWith(prefix));
+
+    rotatingLogs.sort((a, b) => {
+      const statA = fs.statSync(path.join(dir, a));
+      const statB = fs.statSync(path.join(dir, b));
+      return statB.mtime.getTime() - statA.mtime.getTime();
+    });
+
+    return rotatingLogs.map((file) => path.join(dir, file));
+  } catch (err) {
+    console.error('Error finding rotating logs:', err);
+    return [];
+  }
+}
+
+function findLatestRotatingLog(basePath: string): string | null {
+  const logs = findAllRotatingLogs(basePath);
+  return logs.length > 0 ? logs[0] : null;
+}
 
 function loadLogs(logFile: string, service: string): LogEntry[] {
   if (!fileExists(logFile)) {

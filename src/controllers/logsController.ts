@@ -128,10 +128,13 @@ function findAllRotatingLogs(basePath: string): string[] {
   try {
     const dir = path.dirname(basePath);
     const baseFileName = path.basename(basePath);
-    const prefix = baseFileName.split('-')[0] + '-' + baseFileName.split('-')[1];
+    const prefix = baseFileName.split('-')[0];
 
-    const files = fs.readdirSync(dir);
-    const rotatingLogs = files.filter((file) => file.startsWith(prefix));
+    const rotatingLogs = fs.readdirSync(dir)
+    .filter(filename => 
+      filename.startsWith(prefix) && 
+      !filename.toLowerCase().includes('error')
+    );;
 
     rotatingLogs.sort((a, b) => {
       const statA = fs.statSync(path.join(dir, a));

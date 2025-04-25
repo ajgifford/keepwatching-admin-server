@@ -27,11 +27,12 @@ EventEmitter.defaultMaxListeners = 30;
 const EXPRESS_LOG_DIRECTORY = path.resolve(process.env.EXPRESS_LOG_DIR || '/var/log');
 const PM2_LOG_DIRECTORY = path.resolve(process.env.PM2_LOG_DIR || '/var/log/.pm2');
 const serviceAccount: object = require('../certs/keepwatching-service-account-dev.json');
+const UPLOADS_DIR = process.env.UPLOADS_DIR || path.join(process.cwd(), 'uploads');
 
 const app = express();
 const httpServer = createServer(app);
 
-initializeFirebase(serviceAccount)
+initializeFirebase(serviceAccount);
 
 // Middleware
 app.use(cors());
@@ -39,6 +40,7 @@ app.use(helmet());
 app.use(compression());
 app.use(bodyParser.json());
 app.use(logger.logRequest.bind(logger));
+app.use('/uploads', express.static(UPLOADS_DIR));
 
 // Rate limiting
 const limiter = rateLimit({

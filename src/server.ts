@@ -6,6 +6,7 @@ import contentRouter from './routes/contentRouter';
 import logRouter from './routes/logRouter';
 import systemNotificationRouter from './routes/systemNotificationsRouter';
 import { errorHandler } from '@ajgifford/keepwatching-common-server/middleware/errorMiddleware';
+import { initializeFirebase } from '@ajgifford/keepwatching-common-server/utils/firebaseUtil';
 import bodyParser from 'body-parser';
 import { exec } from 'child_process';
 import compression from 'compression';
@@ -25,9 +26,12 @@ EventEmitter.defaultMaxListeners = 30;
 
 const EXPRESS_LOG_DIRECTORY = path.resolve(process.env.EXPRESS_LOG_DIR || '/var/log');
 const PM2_LOG_DIRECTORY = path.resolve(process.env.PM2_LOG_DIR || '/var/log/.pm2');
+const serviceAccount: object = require('../certs/keepwatching-service-account-dev.json');
 
 const app = express();
 const httpServer = createServer(app);
+
+initializeFirebase(serviceAccount)
 
 // Middleware
 app.use(cors());

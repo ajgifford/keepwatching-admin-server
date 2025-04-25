@@ -29,7 +29,6 @@ export const getShows = asyncHandler(async (req: Request, res: Response, next: N
     const offset = (page - 1) * limit;
 
     const allShowsResult = await showService.getAllShows(page, offset, limit);
-    console.log(allShowsResult);
 
     res.status(200).json({
       message: `Retrieved page ${page} of shows`,

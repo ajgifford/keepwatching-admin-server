@@ -12,7 +12,10 @@
     "moduleResolution": "node",
     "baseUrl": ".",
     "paths": {
-      "*": ["node_modules/*", "src/types/*"]
+      "@ajgifford/keepwatching-common-server/*": [
+        "node_modules/@ajgifford/keepwatching-common-server/dist/*",
+        "../keepwatching-common-server/dist/src/*"
+      ]
     }
   },
   "include": ["src/**/*"],

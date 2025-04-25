@@ -1,5 +1,5 @@
-import { BadRequestError } from '../middleware/errorMiddleware';
-import SystemNotification from '../model/systemNotification';
+import { BadRequestError } from '@ajgifford/keepwatching-common-server/middleware/errorMiddleware';
+import { notificationsService } from '@ajgifford/keepwatching-common-server/services';
 import { NextFunction, Request, Response } from 'express';
 import asyncHandler from 'express-async-handler';
 import { z } from 'zod';
@@ -62,7 +62,7 @@ const getExpiredParamSchema = z.object({
 export const getAllSystemNotifications = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { expired } = getExpiredParamSchema.parse(req.query);
-    const notifications = await SystemNotification.getAllNotifications(expired);
+    const notifications = notificationsService.getAllNotifications(expired);
     res.status(200).json({ message: 'Retrieved all notifications', results: notifications });
   } catch (error) {
     if (error instanceof z.ZodError) {
@@ -76,8 +76,7 @@ export const getAllSystemNotifications = asyncHandler(async (req: Request, res: 
 export const addSystemNotification = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { message, startDate, endDate, sendToAll, accountId } = notificationBodySchema.parse(req.body);
-    const notification = new SystemNotification(message, startDate, endDate, sendToAll, accountId);
-    await notification.save();
+    await notificationsService.addNotification(message, startDate, endDate, sendToAll, accountId);
     res.status(200).json({ message: 'Notification added' });
   } catch (error) {
     if (error instanceof z.ZodError) {
@@ -92,9 +91,15 @@ export const updateSystemNotification = asyncHandler(async (req: Request, res: R
   try {
     const { notificationId } = notificationIdQuerySchema.parse(req.params);
     const { message, startDate, endDate, sendToAll, accountId } = notificationBodySchema.parse(req.body);
-    const notification = new SystemNotification(message, startDate, endDate, sendToAll, accountId, notificationId);
-    const updatedNotification = await notification.update();
-    res.status(200).json({ message: 'Notification updated successfully', result: updatedNotification });
+    const notification = notificationsService.updateNotification(
+      message,
+      startDate,
+      endDate,
+      sendToAll,
+      accountId,
+      notificationId,
+    );
+    res.status(200).json({ message: 'Notification updated successfully', result: notification });
   } catch (error) {
     if (error instanceof z.ZodError) {
       throw new BadRequestError(error.errors[0].message);
@@ -107,7 +112,7 @@ export const updateSystemNotification = asyncHandler(async (req: Request, res: R
 export const deleteSystemNotification = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { notificationId } = notificationIdQuerySchema.parse(req.params);
-    await SystemNotification.delete(notificationId);
+    await notificationsService.deleteNotification(notificationId);
     res.status(200).json({ message: 'Notification deleted successfully' });
   } catch (error) {
     if (error instanceof z.ZodError) {

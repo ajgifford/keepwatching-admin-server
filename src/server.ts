@@ -1,11 +1,11 @@
 import 'dotenv/config';
 
 import { logger } from './logger/logger';
-import { errorHandler } from './middleware/errorMiddleware';
 import accountRouter from './routes/accountManagementRouter';
 import contentRouter from './routes/contentRouter';
 import logRouter from './routes/logRouter';
 import systemNotificationRouter from './routes/systemNotificationsRouter';
+import { errorHandler } from '@ajgifford/keepwatching-common-server/middleware/errorMiddleware';
 import bodyParser from 'body-parser';
 import { exec } from 'child_process';
 import compression from 'compression';
@@ -239,10 +239,10 @@ async function readRecentLogs(filePath: string, service: string, limit: number =
     // Special handling for JSON logs
     let currentErrorEntry: LogEntry | null = null;
     let isCollectingStackTrace = false;
-    
+
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i];
-      
+
       // First, try to detect if this is a complete JSON log entry
       let isCompleteJson = false;
       try {
@@ -252,7 +252,7 @@ async function readRecentLogs(filePath: string, service: string, limit: number =
       } catch (e) {
         // Not a complete JSON object
       }
-      
+
       // If it's a complete JSON, process it normally
       if (isCompleteJson) {
         // If we were collecting an error, finalize it first
@@ -261,14 +261,14 @@ async function readRecentLogs(filePath: string, service: string, limit: number =
           currentErrorEntry = null;
           isCollectingStackTrace = false;
         }
-        
+
         const entry = parseLogLine(line, service, filePath);
         if (entry) {
           logs.push(entry);
         }
         continue;
       }
-      
+
       // Check if this is the start of an actual error (contains Error: or ValidationError:)
       // Be more specific to avoid false positives
       const errorStartPattern = /(?:^|\s)(?:[A-Z][a-zA-Z]*)?Error:|\bException:/;
@@ -278,29 +278,29 @@ async function readRecentLogs(filePath: string, service: string, limit: number =
         isCollectingStackTrace = true;
         continue;
       }
-      
+
       // If we're collecting a stack trace
       if (isCollectingStackTrace) {
         // More specific pattern for stack trace lines
-        const isStackTraceLine = 
+        const isStackTraceLine =
           /^\s+at\s/.test(line) || // Indented 'at' line
           line.includes('node:') || // Node.js internal reference
           /^\s*\{/.test(line) || // Start of JSON object
           /^\s*\}/.test(line) || // End of JSON object
           line.includes('code:') || // Error code
           line.includes('help:'); // Help URL
-        
+
         if (isStackTraceLine) {
           // Append to the current error message
           if (currentErrorEntry) {
             currentErrorEntry.message += '\n' + line;
           }
-          
+
           // Check if this might be the end of the stack trace
-          const isEndOfStackTrace = 
+          const isEndOfStackTrace =
             /^\s*\}\s*$/.test(line) || // Line with just a closing brace
-            (line.trim().startsWith('at ') && (i === lines.length - 1 || !lines[i+1].trim().startsWith('at ')));
-          
+            (line.trim().startsWith('at ') && (i === lines.length - 1 || !lines[i + 1].trim().startsWith('at ')));
+
           if (isEndOfStackTrace) {
             // End of stack trace
             if (currentErrorEntry) {
@@ -309,7 +309,7 @@ async function readRecentLogs(filePath: string, service: string, limit: number =
               isCollectingStackTrace = false;
             }
           }
-          
+
           continue;
         } else {
           // Not part of stack trace anymore, add the collected error entry and reset
@@ -320,14 +320,14 @@ async function readRecentLogs(filePath: string, service: string, limit: number =
           }
         }
       }
-      
+
       // Process regular line
       const entry = parseLogLine(line, service, filePath);
       if (entry) {
         logs.push(entry);
       }
     }
-    
+
     // If we ended while still collecting an error, add it
     if (currentErrorEntry) {
       logs.push(currentErrorEntry);
@@ -474,7 +474,7 @@ app.get('/api/logs/stream', (req, res) => {
   // Start tailing each log file
   Object.entries(LOG_PATHS).forEach(([service, logPath]) => {
     errorBuffers[service] = [];
-    
+
     if (fileExists(logPath)) {
       availableLogs.push(service);
       try {
@@ -489,11 +489,11 @@ app.get('/api/logs/stream', (req, res) => {
           } catch (e) {
             // Not a complete JSON object
           }
-          
+
           if (isCompleteJson) {
             // If we had a pending error, send it first
             sendBufferedError(service);
-            
+
             // Process normal JSON log line
             const logEntry: LogEntry = {
               timestamp: new Date().toISOString(),
@@ -506,53 +506,53 @@ app.get('/api/logs/stream', (req, res) => {
             res.write(`data: ${JSON.stringify(logEntry)}\n\n`);
             return;
           }
-          
+
           // More specific error detection
           const errorStartPattern = /(?:^|\s)(?:[A-Z][a-zA-Z]*)?Error:|\bException:/;
           const isStartOfError = errorStartPattern.test(data);
-          
+
           // More specific stack trace line detection
-          const isStackTraceLine = 
-            /^\s+at\s/.test(data) || 
+          const isStackTraceLine =
+            /^\s+at\s/.test(data) ||
             data.includes('node:') ||
-            /^\s*\{/.test(data) || 
-            /^\s*\}/.test(data) || 
+            /^\s*\{/.test(data) ||
+            /^\s*\}/.test(data) ||
             data.includes('code:') ||
             data.includes('help:');
-          
+
           // Reset buffer on new error start
           if (isStartOfError) {
             sendBufferedError(service); // Send any previous buffered error
             errorBuffers[service] = [data];
-            
+
             // Set a timer to send this error if no more lines come in
             if (errorTimers[service]) clearTimeout(errorTimers[service]);
             errorTimers[service] = setTimeout(() => sendBufferedError(service), ERROR_BUFFER_TIMEOUT);
-            
+
             return;
           }
-          
+
           // Add line to error if we're collecting an error and this looks like part of a stack trace
           if (errorBuffers[service].length > 0 && isStackTraceLine) {
             errorBuffers[service].push(data);
-            
+
             // Reset the timer
             if (errorTimers[service]) clearTimeout(errorTimers[service]);
             errorTimers[service] = setTimeout(() => sendBufferedError(service), ERROR_BUFFER_TIMEOUT);
-            
+
             // Check for end of stack trace
             if (/^\s*\}\s*$/.test(data)) {
               sendBufferedError(service);
             }
-            
+
             return;
           }
-          
+
           // If we have a buffered error and this isn't part of it, send the error
           if (errorBuffers[service].length > 0) {
             sendBufferedError(service);
           }
-          
+
           // Process normal line
           const logEntry: LogEntry = {
             timestamp: new Date().toISOString(),
@@ -564,7 +564,7 @@ app.get('/api/logs/stream', (req, res) => {
 
           res.write(`data: ${JSON.stringify(logEntry)}\n\n`);
         });
-        
+
         // Helper function to send buffered error
         function sendBufferedError(svc: string) {
           if (errorBuffers[svc].length > 0) {
@@ -576,7 +576,7 @@ app.get('/api/logs/stream', (req, res) => {
               level: 'error',
               logFile: path.basename(logPath),
             };
-            
+
             res.write(`data: ${JSON.stringify(logEntry)}\n\n`);
             errorBuffers[svc] = [];
             if (errorTimers[svc]) {

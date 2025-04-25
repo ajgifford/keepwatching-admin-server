@@ -62,7 +62,7 @@ const getExpiredParamSchema = z.object({
 export const getAllSystemNotifications = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { expired } = getExpiredParamSchema.parse(req.query);
-    const notifications = notificationsService.getAllNotifications(expired);
+    const notifications = await notificationsService.getAllNotifications(expired);
     res.status(200).json({ message: 'Retrieved all notifications', results: notifications });
   } catch (error) {
     if (error instanceof z.ZodError) {
@@ -91,7 +91,7 @@ export const updateSystemNotification = asyncHandler(async (req: Request, res: R
   try {
     const { notificationId } = notificationIdQuerySchema.parse(req.params);
     const { message, startDate, endDate, sendToAll, accountId } = notificationBodySchema.parse(req.body);
-    const notification = notificationsService.updateNotification(
+    const notification = await notificationsService.updateNotification(
       message,
       startDate,
       endDate,

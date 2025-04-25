@@ -74,7 +74,7 @@ export const getProfiles = asyncHandler(async (req: Request, res: Response, next
   try {
     const { accountId } = req.params as AccountIdParam;
 
-    const profiles = profileService.getProfilesWithCountsByAccount(Number(accountId));
+    const profiles = await profileService.getProfilesWithCountsByAccount(Number(accountId));
     res.json({ message: 'Retrieved profiles', results: profiles });
   } catch (error) {
     next(error);

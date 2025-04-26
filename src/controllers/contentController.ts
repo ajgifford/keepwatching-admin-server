@@ -1,4 +1,5 @@
 import { moviesService, showService } from '@ajgifford/keepwatching-common-server/services';
+import { updateMovies, updateShows } from '@ajgifford/keepwatching-common-server/services';
 import { NextFunction, Request, Response } from 'express';
 import asyncHandler from 'express-async-handler';
 
@@ -51,11 +52,32 @@ export const updateShow = asyncHandler(async (req: Request, res: Response, next:
   }
 });
 
+// POST /api/v1/shows/updateAll
+export const updateAllShows = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    updateShows();
+    res.status(200).json({ message: `Show update process started successfully` });
+  } catch (error) {
+    next(error);
+  }
+});
+
 // POST /api/v1/movies/update?movieId={}
 export const updateMovie = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const movieId = req.query.movieId;
-    res.status(200).json({ message: 'Checked for movie changes' });
+    const { movieId, tmdbId } = req.body;
+    await moviesService.updateMovieById(Number(movieId), Number(tmdbId));
+    res.status(200).json({ message: `Movie with TMDB Id ${tmdbId} was updated` });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// POST /api/v1/movies/updateAll
+export const updateAllMovies = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    updateMovies();
+    res.status(200).json({ message: 'Movie update process started successfully' });
   } catch (error) {
     next(error);
   }

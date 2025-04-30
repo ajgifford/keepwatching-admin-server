@@ -1,4 +1,4 @@
-import { BadRequestError } from '@ajgifford/keepwatching-common-server/middleware/errorMiddleware';
+import { BadRequestError } from '@ajgifford/keepwatching-common-server';
 import { notificationsService } from '@ajgifford/keepwatching-common-server/services';
 import { NextFunction, Request, Response } from 'express';
 import asyncHandler from 'express-async-handler';

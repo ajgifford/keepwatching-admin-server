@@ -3,16 +3,10 @@ import {
   AccountIdParam,
   AccountUpdateParams,
   ProfileNameParam,
-} from '@ajgifford/keepwatching-common-server/schema/accountSchema';
+} from '@ajgifford/keepwatching-common-server/schema';
 import { accountService, profileService } from '@ajgifford/keepwatching-common-server/services';
 import { NextFunction, Request, Response } from 'express';
 import asyncHandler from 'express-async-handler';
-import admin from 'firebase-admin';
-
-const serviceAccount: object = require('../../certs/keepwatching-service-account-dev.json');
-admin.initializeApp({
-  credential: admin.credential.cert(serviceAccount),
-});
 
 /**
  * Gets all accounts.

@@ -6,13 +6,13 @@ import {
   getAccounts,
   getProfiles,
 } from '../controllers/accountManagementController';
-import { validateRequest, validateSchema } from '@ajgifford/keepwatching-common-server/middleware/validationMiddleware';
+import { validateRequest, validateSchema } from '@ajgifford/keepwatching-common-server';
 import {
   accountAndProfileIdsParamSchema,
   accountIdParamSchema,
   accountUpdateSchema,
   profileNameSchema,
-} from '@ajgifford/keepwatching-common-server/schema/accountSchema';
+} from '@ajgifford/keepwatching-common-server/schema';
 import express from 'express';
 
 const router = express.Router();

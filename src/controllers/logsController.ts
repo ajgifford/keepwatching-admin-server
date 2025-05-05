@@ -1,3 +1,4 @@
+import { getExpressLogDir, getPM2LogDir } from '@ajgifford/keepwatching-common-server/config';
 import { NextFunction, Request, Response } from 'express';
 import asyncHandler from 'express-async-handler';
 import fs from 'fs';
@@ -54,8 +55,8 @@ interface LogFilter {
   limit?: number;
 }
 
-const EXPRESS_LOG_DIRECTORY = path.resolve(process.env.EXPRESS_LOG_DIR || '/var/log');
-const PM2_LOG_DIRECTORY = path.resolve(process.env.PM2_LOG_DIR || '/var/log/.pm2');
+const EXPRESS_LOG_DIRECTORY = getExpressLogDir();
+const PM2_LOG_DIRECTORY = getPM2LogDir();
 const nginxLogPattern = /^(\S+) (\S+) (\S+) \[([^\]]+)\] "([^"]*)" (\d+) (\d+) "([^"]*)" "([^"]*)"$/;
 const logRegex = /\[([\w\-]+ [\d:]+)\] (?:\x1b?\[\d+m)?(\w+)(?:\x1b?\s?\[\d+m)? \(([\d\.]+)\): (.+)/;
 

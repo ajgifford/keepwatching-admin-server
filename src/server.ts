@@ -1,13 +1,20 @@
 import 'dotenv/config';
 
-import { logger } from './logger/logger';
 import accountRouter from './routes/accountManagementRouter';
 import contentRouter from './routes/contentRouter';
 import logRouter from './routes/logRouter';
 import servicesRouter from './routes/servicesRouter';
 import systemNotificationRouter from './routes/systemNotificationsRouter';
 import { errorHandler } from '@ajgifford/keepwatching-common-server';
-import { ErrorMessages, cliLogger, httpLogger } from '@ajgifford/keepwatching-common-server/logger';
+import {
+  getLogDirectory,
+  getPort,
+  getRateLimitMax,
+  getRateLimitTimeWindow,
+  getUploadDirectory,
+} from '@ajgifford/keepwatching-common-server/config';
+import { ErrorMessages, appLogger, cliLogger } from '@ajgifford/keepwatching-common-server/logger';
+import { responseInterceptor } from '@ajgifford/keepwatching-common-server/middleware';
 import { databaseService } from '@ajgifford/keepwatching-common-server/services';
 import { shutdownJobs } from '@ajgifford/keepwatching-common-server/services';
 import { initializeFirebase } from '@ajgifford/keepwatching-common-server/utils';
@@ -19,15 +26,14 @@ import express from 'express';
 import rateLimit from 'express-rate-limit';
 import helmet from 'helmet';
 import { createServer } from 'http';
-import path from 'path';
 
 // Increase max listeners to handle multiple SSE connections
 EventEmitter.defaultMaxListeners = 30;
 
 const serviceAccount: object = require('../certs/keepwatching-service-account-dev.json');
-const UPLOADS_DIRECTORY = process.env.UPLOADS_DIR || path.join(process.cwd(), 'uploads');
-const LOG_DIRECTORY = path.resolve(process.env.LOG_DIR || 'logs');
-const PORT = process.env.PORT || 3001;
+const UPLOADS_DIRECTORY = getUploadDirectory();
+const LOG_DIRECTORY = getLogDirectory();
+const PORT = getPort();
 
 const app = express();
 const httpServer = createServer(app);
@@ -39,13 +45,13 @@ app.use(cors());
 app.use(helmet());
 app.use(compression());
 app.use(bodyParser.json());
-app.use(logger.logRequest.bind(logger));
+app.use(responseInterceptor);
 app.use('/uploads', express.static(UPLOADS_DIRECTORY));
 
 // Rate limiting
 const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // limit each IP to 100 requests per windowMs
+  windowMs: getRateLimitTimeWindow(),
+  max: getRateLimitMax(),
 });
 
 app.use('/api/', limiter);
@@ -66,7 +72,7 @@ const startServer = async () => {
     });
   } catch (error) {
     cliLogger.error('Error starting the server!');
-    httpLogger.error(ErrorMessages.AppStartupFail, { error });
+    appLogger.error(ErrorMessages.AppStartupFail, { error });
     process.exit(1);
   }
 };

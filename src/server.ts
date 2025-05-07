@@ -1,3 +1,4 @@
+import dotenv from 'dotenv';
 import 'dotenv/config';
 
 import accountRouter from './routes/accountManagementRouter';
@@ -26,6 +27,9 @@ import express from 'express';
 import rateLimit from 'express-rate-limit';
 import helmet from 'helmet';
 import { createServer } from 'http';
+
+const envFile = process.env.NODE_ENV === 'production' ? '.env.production' : '.env.development';
+dotenv.config({ path: envFile });
 
 // Increase max listeners to handle multiple SSE connections
 EventEmitter.defaultMaxListeners = 30;

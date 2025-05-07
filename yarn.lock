@@ -2,10 +2,10 @@
 # yarn lockfile v1
 
 
-"@ajgifford/keepwatching-common-server@^0.1.8":
-  version "0.1.8"
-  resolved "https://npm.pkg.github.com/download/@ajgifford/keepwatching-common-server/0.1.8/ad7b74e35cfe0ab8c03a71a4562025ac6031c777#ad7b74e35cfe0ab8c03a71a4562025ac6031c777"
-  integrity sha512-R8G31yclGGbBIc6SOswx8fnXs0ZrBKX+KlUsVNpBrLmF9OrUGj2yHs8cwdQVuhCSUoUtIwNWAXmld6tmzOHm9w==
+"@ajgifford/keepwatching-common-server@^0.1.9":
+  version "0.1.9"
+  resolved "https://npm.pkg.github.com/download/@ajgifford/keepwatching-common-server/0.1.9/38c52f4063687b25729517efa209de7f81b78cb8#38c52f4063687b25729517efa209de7f81b78cb8"
+  integrity sha512-9wEgiGTU+kodJOcbfI+BucWo01P9JL9vm/fZTwBO/2LRuD/uHmSofKx8zJOTW7pDqKX+L1XnoPC0ws7pYJQxgw==
   dependencies:
     axios "^1.8.4"
     axios-retry "^4.5.0"

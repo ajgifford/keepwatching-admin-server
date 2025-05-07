@@ -12,6 +12,7 @@ import {
   getPort,
   getRateLimitMax,
   getRateLimitTimeWindow,
+  getServiceAccountPath,
   getUploadDirectory,
 } from '@ajgifford/keepwatching-common-server/config';
 import { ErrorMessages, appLogger, cliLogger } from '@ajgifford/keepwatching-common-server/logger';
@@ -34,7 +35,7 @@ dotenv.config({ path: envFile });
 // Increase max listeners to handle multiple SSE connections
 EventEmitter.defaultMaxListeners = 30;
 
-const serviceAccount: object = require('../certs/keepwatching-service-account-dev.json');
+const serviceAccount: object = require(getServiceAccountPath());
 const UPLOADS_DIRECTORY = getUploadDirectory();
 const LOG_DIRECTORY = getLogDirectory();
 const PORT = getPort();

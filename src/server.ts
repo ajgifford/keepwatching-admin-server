@@ -35,7 +35,7 @@ dotenv.config({ path: envFile });
 // Increase max listeners to handle multiple SSE connections
 EventEmitter.defaultMaxListeners = 30;
 
-const serviceAccount: object = require(getServiceAccountPath());
+const SERVICE_ACCOUNT_PATH = getServiceAccountPath();
 const UPLOADS_DIRECTORY = getUploadDirectory();
 const LOG_DIRECTORY = getLogDirectory();
 const PORT = getPort();
@@ -43,6 +43,7 @@ const PORT = getPort();
 const app = express();
 const httpServer = createServer(app);
 
+const serviceAccount: object = require(SERVICE_ACCOUNT_PATH);
 initializeFirebase(serviceAccount);
 
 // Middleware
@@ -74,6 +75,7 @@ const startServer = async () => {
       cliLogger.info(`Server is running on https://localhost:${PORT}`);
       cliLogger.info(`Serving uploads from: ${UPLOADS_DIRECTORY}`);
       cliLogger.info(`Writing logs to: ${LOG_DIRECTORY}`);
+      cliLogger.info(`Reading service account from: ${SERVICE_ACCOUNT_PATH}`);
     });
   } catch (error) {
     cliLogger.error('Error starting the server!');

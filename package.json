@@ -49,9 +49,12 @@
     "format": "prettier --config ./prettier.config.js . --write",
     "pm2:dev": "pm2 start ecosystem.config.js --only keepwatching-admin-server-dev",
     "pm2:prod": "npm run build && pm2 start ecosystem.config.js --env production --only keepwatching-admin-server",
-    "pm2:stop": "pm2 stop ecosystem.config.js",
+    "pm2:stop:dev": "pm2 stop keepwatching-admin-server-dev",
+    "pm2:stop:prod": "pm2 stop keepwatching-admin-server",
     "pm2:restart": "pm2 restart ecosystem.config.js",
-    "pm2:logs": "pm2 logs"
+    "pm2:logs": "pm2 logs",
+    "start:dev": "./scripts/start-admin.sh dev",
+    "start:prod": "./scripts/start-admin.sh prod"
   },
   "packageManager": "yarn@1.22.22+sha512.a6b2f7906b721bba3d67d4aff083df04dad64c399707841b7acf00f6b133b7ac24255f2652fa22ae3534329dc6180534e98d17432037ff6fd140556e2bb3137e"
 }

@@ -1,4 +1,4 @@
-import { moviesService, showService } from '@ajgifford/keepwatching-common-server/services';
+import { adminShowService, moviesService, showService } from '@ajgifford/keepwatching-common-server/services';
 import { updateMovies, updateShows } from '@ajgifford/keepwatching-common-server/services';
 import { NextFunction, Request, Response } from 'express';
 import asyncHandler from 'express-async-handler';
@@ -29,13 +29,97 @@ export const getShows = asyncHandler(async (req: Request, res: Response, next: N
     const limit = Math.min(100, parseInt(req.query.limit as string) || 50);
     const offset = (page - 1) * limit;
 
-    const allShowsResult = await showService.getAllShows(page, offset, limit);
+    const allShowsResult = await adminShowService.getAllShows(page, offset, limit);
 
     res.status(200).json({
       message: `Retrieved page ${page} of shows`,
       pagination: allShowsResult.pagination,
       results: allShowsResult.shows,
     });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// GET /api/v1/shows/:showId
+export const getShowDetails = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { showId } = req.params;
+    const showDetails = await adminShowService.getShowDetails(Number(showId));
+
+    res.status(200).json({ message: 'Retrieved details for show', results: showDetails });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// GET /api/v1/shows/:showId/full
+export const getFullShowDetails = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { showId } = req.params;
+    const showDetails = await adminShowService.getCompleteShowInfo(Number(showId));
+
+    res.status(200).json({ message: 'Retrieved details for show', results: showDetails });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// GET /api/v1/shows/:showId/seasons
+export const getShowSeasons = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { showId } = req.params;
+    const seasons = await adminShowService.getShowSeasons(Number(showId));
+
+    res.status(200).json({ message: 'Retrieved seasons for show', results: seasons });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// GET /api/v1/shows/:showId/seasonsEpisodes
+export const getShowSeasonsAndEpisodes = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { showId } = req.params;
+    const seasons = await adminShowService.getShowSeasonsWithEpisodes(Number(showId));
+
+    res.status(200).json({ message: 'Retrieved seasons and episodes for show', results: seasons });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// GET /api/v1/shows/:showId/profiles
+export const getShowProfiles = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { showId } = req.params;
+    const profiles = await adminShowService.getShowProfiles(Number(showId));
+
+    res.status(200).json({ message: 'Retrieved profiles for show', results: profiles });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// GET /api/v1/shows/:showId/watchProgress
+export const getShowWatchProgress = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { showId } = req.params;
+    const watchProgress = await adminShowService.getShowWatchProgress(Number(showId));
+
+    res.status(200).json({ message: 'Retrieved watch progress for show', results: watchProgress });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// GET /api/v1/shows/seasons/:seasonId/episodes
+export const getSeasonEpisodes = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { seasonId } = req.params;
+    const episodes = await adminShowService.getSeasonEpisodes(Number(seasonId));
+
+    res.status(200).json({ message: 'Retrieved episodes for season', results: episodes });
   } catch (error) {
     next(error);
   }

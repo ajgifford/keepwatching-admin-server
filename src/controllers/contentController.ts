@@ -1,4 +1,9 @@
-import { adminShowService, moviesService, showService } from '@ajgifford/keepwatching-common-server/services';
+import {
+  adminMovieService,
+  adminShowService,
+  moviesService,
+  showService,
+} from '@ajgifford/keepwatching-common-server/services';
 import { updateMovies, updateShows } from '@ajgifford/keepwatching-common-server/services';
 import { NextFunction, Request, Response } from 'express';
 import asyncHandler from 'express-async-handler';
@@ -10,7 +15,7 @@ export const getMovies = asyncHandler(async (req: Request, res: Response, next: 
     const limit = Math.min(100, parseInt(req.query.limit as string) || 50);
     const offset = (page - 1) * limit;
 
-    const allMoviesResult = await moviesService.getAllMovies(page, offset, limit);
+    const allMoviesResult = await adminMovieService.getAllMovies(page, offset, limit);
 
     res.status(200).json({
       message: `Retrieved page ${page} of movies`,
@@ -42,10 +47,10 @@ export const getShows = asyncHandler(async (req: Request, res: Response, next: N
 });
 
 // GET /api/v1/shows/:showId
-export const getShowDetails = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+export const getFullShowDetails = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { showId } = req.params;
-    const showDetails = await adminShowService.getShowDetails(Number(showId));
+    const showDetails = await adminShowService.getCompleteShowInfo(Number(showId));
 
     res.status(200).json({ message: 'Retrieved details for show', results: showDetails });
   } catch (error) {
@@ -53,11 +58,11 @@ export const getShowDetails = asyncHandler(async (req: Request, res: Response, n
   }
 });
 
-// GET /api/v1/shows/:showId/full
-export const getFullShowDetails = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+// GET /api/v1/shows/:showId/details
+export const getShowDetails = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { showId } = req.params;
-    const showDetails = await adminShowService.getCompleteShowInfo(Number(showId));
+    const showDetails = await adminShowService.getShowDetails(Number(showId));
 
     res.status(200).json({ message: 'Retrieved details for show', results: showDetails });
   } catch (error) {
@@ -113,23 +118,11 @@ export const getShowWatchProgress = asyncHandler(async (req: Request, res: Respo
   }
 });
 
-// GET /api/v1/shows/seasons/:seasonId/episodes
-export const getSeasonEpisodes = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const { seasonId } = req.params;
-    const episodes = await adminShowService.getSeasonEpisodes(Number(seasonId));
-
-    res.status(200).json({ message: 'Retrieved episodes for season', results: episodes });
-  } catch (error) {
-    next(error);
-  }
-});
-
-// POST /api/v1/shows/update?tmdbId={}
+// POST /api/v1/shows/update
 export const updateShow = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { showId, tmdbId } = req.body;
-    await showService.updateShowById(Number(showId), Number(tmdbId), 'all');
+    await adminShowService.updateShowById(Number(showId), Number(tmdbId), 'all');
     res.status(200).json({ message: `Show with TMDB Id ${tmdbId} was updated` });
   } catch (error) {
     next(error);
@@ -146,11 +139,11 @@ export const updateAllShows = asyncHandler(async (req: Request, res: Response, n
   }
 });
 
-// POST /api/v1/movies/update?movieId={}
+// POST /api/v1/movies/update
 export const updateMovie = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { movieId, tmdbId } = req.body;
-    await moviesService.updateMovieById(Number(movieId), Number(tmdbId));
+    await adminMovieService.updateMovieById(Number(movieId), Number(tmdbId));
     res.status(200).json({ message: `Movie with TMDB Id ${tmdbId} was updated` });
   } catch (error) {
     next(error);
@@ -162,6 +155,42 @@ export const updateAllMovies = asyncHandler(async (req: Request, res: Response, 
   try {
     updateMovies();
     res.status(200).json({ message: 'Movie update process started successfully' });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// GET /api/v1/movies/:movieId
+export const getFullMovieDetails = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { movieId } = req.params;
+    const movieDetails = await adminMovieService.getCompleteMovieInfo(Number(movieId));
+
+    res.status(200).json({ message: 'Retrieved details for movie', results: movieDetails });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// GET /api/v1/movies/:movieId/details
+export const getMovieDetails = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { movieId } = req.params;
+    const movieDetails = await adminMovieService.getMovieDetails(Number(movieId));
+
+    res.status(200).json({ message: 'Retrieved details for movie', results: movieDetails });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// GET /api/v1/movies/:movieId/profiles
+export const getMovieProfiles = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { movieId } = req.params;
+    const profiles = await adminMovieService.getMovieProfiles(Number(movieId));
+
+    res.status(200).json({ message: 'Retrieved profiles for movie', results: profiles });
   } catch (error) {
     next(error);
   }

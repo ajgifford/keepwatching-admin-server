@@ -1,4 +1,3 @@
-import dotenv from 'dotenv';
 import 'dotenv/config';
 
 import accountRouter from './routes/accountManagementRouter';
@@ -19,7 +18,7 @@ import { ErrorMessages, appLogger, cliLogger } from '@ajgifford/keepwatching-com
 import { responseInterceptor } from '@ajgifford/keepwatching-common-server/middleware';
 import { databaseService } from '@ajgifford/keepwatching-common-server/services';
 import { shutdownJobs } from '@ajgifford/keepwatching-common-server/services';
-import { initializeFirebase } from '@ajgifford/keepwatching-common-server/utils';
+import { GlobalErrorHandler, initializeFirebase } from '@ajgifford/keepwatching-common-server/utils';
 import bodyParser from 'body-parser';
 import compression from 'compression';
 import cors from 'cors';
@@ -29,8 +28,7 @@ import rateLimit from 'express-rate-limit';
 import helmet from 'helmet';
 import { createServer } from 'http';
 
-const envFile = process.env.NODE_ENV === 'production' ? '.env.production' : '.env.development';
-dotenv.config({ path: envFile });
+GlobalErrorHandler.initialize();
 
 // Increase max listeners to handle multiple SSE connections
 EventEmitter.defaultMaxListeners = 30;

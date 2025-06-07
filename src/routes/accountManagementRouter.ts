@@ -10,8 +10,8 @@ import { validateRequest, validateSchema } from '@ajgifford/keepwatching-common-
 import {
   accountAndProfileIdsParamSchema,
   accountIdParamSchema,
-  accountUpdateSchema,
-  profileNameSchema,
+  profileNameBodySchema,
+  updateAccountBodySchema,
 } from '@ajgifford/keepwatching-common-server/schema';
 import express from 'express';
 
@@ -21,7 +21,7 @@ router.get('/api/v1/accounts', getAccounts);
 router.put(
   '/api/v1/accounts/:accountId',
   validateSchema(accountIdParamSchema, 'params'),
-  validateRequest(accountUpdateSchema),
+  validateRequest(updateAccountBodySchema),
   editAccount,
 );
 router.delete('/api/v1/accounts/:accountId', validateSchema(accountIdParamSchema, 'params'), deleteAccount);
@@ -29,7 +29,7 @@ router.get('/api/v1/accounts/:accountId/profiles', validateSchema(accountIdParam
 router.put(
   '/api/v1/accounts/:accountId/profiles/:profileId',
   validateSchema(accountAndProfileIdsParamSchema, 'params'),
-  validateRequest(profileNameSchema),
+  validateRequest(profileNameBodySchema),
   editProfile,
 );
 router.delete(

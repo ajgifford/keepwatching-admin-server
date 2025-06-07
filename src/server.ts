@@ -2,21 +2,25 @@ import 'dotenv/config';
 
 import accountRouter from './routes/accountManagementRouter';
 import contentRouter from './routes/contentRouter';
+import emailRouter from './routes/emailRouter';
 import logRouter from './routes/logRouter';
 import servicesRouter from './routes/servicesRouter';
 import systemNotificationRouter from './routes/systemNotificationsRouter';
 import { errorHandler } from '@ajgifford/keepwatching-common-server';
 import {
+  getEmailConfig,
   getLogDirectory,
   getPort,
   getRateLimitMax,
   getRateLimitTimeWindow,
   getServiceAccountPath,
   getUploadDirectory,
+  isEmailEnabled,
+  validateEmailConfig,
 } from '@ajgifford/keepwatching-common-server/config';
 import { ErrorMessages, appLogger, cliLogger } from '@ajgifford/keepwatching-common-server/logger';
 import { responseInterceptor } from '@ajgifford/keepwatching-common-server/middleware';
-import { databaseService } from '@ajgifford/keepwatching-common-server/services';
+import { databaseService, initializeEmailService } from '@ajgifford/keepwatching-common-server/services';
 import { shutdownJobs } from '@ajgifford/keepwatching-common-server/services';
 import { GlobalErrorHandler, initializeFirebase } from '@ajgifford/keepwatching-common-server/utils';
 import bodyParser from 'body-parser';
@@ -61,6 +65,7 @@ const limiter = rateLimit({
 app.use('/api/', limiter);
 app.use(accountRouter);
 app.use(contentRouter);
+app.use(emailRouter);
 app.use(logRouter);
 app.use(servicesRouter);
 app.use(systemNotificationRouter);
@@ -69,6 +74,27 @@ app.use(errorHandler);
 
 const startServer = async () => {
   try {
+    if (isEmailEnabled()) {
+      const emailValidation = validateEmailConfig();
+
+      if (!emailValidation.isValid) {
+        cliLogger.error('Email configuration is invalid:', emailValidation.errors);
+        cliLogger.warn('Email service will be disabled due to configuration errors');
+        process.env.EMAIL_ENABLED = 'false';
+      } else {
+        const emailConfig = getEmailConfig();
+        const emailService = initializeEmailService(emailConfig);
+
+        // Verify email connection on startup
+        const isConnected = await emailService.verifyConnection();
+        if (!isConnected) {
+          cliLogger.warn('Email service connection failed, but continuing startup');
+        }
+      }
+    } else {
+      cliLogger.info('Email service is disabled via configuration');
+    }
+
     httpServer.listen(PORT, () => {
       cliLogger.info(`Server is running on https://localhost:${PORT}`);
       cliLogger.info(`Serving uploads from: ${UPLOADS_DIRECTORY}`);

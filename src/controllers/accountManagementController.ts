@@ -1,8 +1,8 @@
 import {
   AccountAndProfileIdsParams,
   AccountIdParam,
-  AccountUpdateParams,
-  ProfileNameParam,
+  ProfileNameBody,
+  UpdateAccountBody,
 } from '@ajgifford/keepwatching-common-server/schema';
 import { accountService, profileService } from '@ajgifford/keepwatching-common-server/services';
 import { NextFunction, Request, Response } from 'express';
@@ -16,7 +16,7 @@ import asyncHandler from 'express-async-handler';
 export const getAccounts = asyncHandler(async (req: Request, res: Response) => {
   try {
     const combinedUsers = await accountService.getAccounts();
-    res.json({ message: 'Retrieved accounts', results: combinedUsers });
+    res.json({ message: `Retrieved ${combinedUsers.length} accounts`, results: combinedUsers });
   } catch (error) {
     throw error;
   }
@@ -29,10 +29,10 @@ export const getAccounts = asyncHandler(async (req: Request, res: Response) => {
  */
 export const editAccount = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { accountId } = req.params as AccountIdParam;
-    const { name, defaultProfileId }: AccountUpdateParams = req.body;
+    const { accountId } = req.params as unknown as AccountIdParam;
+    const { name, defaultProfileId }: UpdateAccountBody = req.body;
 
-    const updatedAccount = await accountService.editAccount(Number(accountId), name, Number(defaultProfileId));
+    const updatedAccount = await accountService.editAccount(accountId, name, defaultProfileId);
 
     res.status(200).json({
       message: `Updated account ${accountId}`,
@@ -50,9 +50,9 @@ export const editAccount = asyncHandler(async (req: Request, res: Response, next
  */
 export const deleteAccount = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { accountId } = req.params as AccountIdParam;
+    const { accountId } = req.params as unknown as AccountIdParam;
 
-    await accountService.deleteAccount(Number(accountId));
+    await accountService.deleteAccount(accountId);
     res.json({ message: 'Account deleted successfully' });
   } catch (error) {
     next(error);
@@ -66,9 +66,9 @@ export const deleteAccount = asyncHandler(async (req: Request, res: Response, ne
  */
 export const getProfiles = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { accountId } = req.params as AccountIdParam;
+    const { accountId } = req.params as unknown as AccountIdParam;
 
-    const profiles = await profileService.getProfilesWithCountsByAccount(Number(accountId));
+    const profiles = await profileService.getAdminProfilesByAccount(accountId);
     res.json({ message: 'Retrieved profiles', results: profiles });
   } catch (error) {
     next(error);
@@ -82,10 +82,10 @@ export const getProfiles = asyncHandler(async (req: Request, res: Response, next
  */
 export const editProfile = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { profileId } = req.params as AccountAndProfileIdsParams;
-    const { name }: ProfileNameParam = req.body;
+    const { profileId } = req.params as unknown as AccountAndProfileIdsParams;
+    const { name }: ProfileNameBody = req.body;
 
-    const updatedProfile = await profileService.updateProfileName(Number(profileId), name);
+    const updatedProfile = await profileService.updateProfileName(profileId, name);
 
     res.status(200).json({
       message: 'Profile edited successfully',
@@ -105,9 +105,9 @@ export const editProfile = asyncHandler(async (req: Request, res: Response, next
  */
 export const deleteProfile = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { profileId } = req.params as AccountAndProfileIdsParams;
+    const { profileId } = req.params as unknown as AccountAndProfileIdsParams;
 
-    await profileService.deleteProfile(Number(profileId));
+    await profileService.deleteProfile(profileId);
 
     res.status(204).json({ message: 'Profile deleted successfully' });
   } catch (error) {

@@ -76,7 +76,7 @@ export const getAllSystemNotifications = asyncHandler(async (req: Request, res: 
 export const addSystemNotification = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { message, startDate, endDate, sendToAll, accountId } = notificationBodySchema.parse(req.body);
-    await notificationsService.addNotification(message, startDate, endDate, sendToAll, accountId);
+    await notificationsService.addNotification({ message, startDate, endDate, sendToAll, accountId });
     res.status(200).json({ message: 'Notification added' });
   } catch (error) {
     if (error instanceof z.ZodError) {
@@ -91,14 +91,14 @@ export const updateSystemNotification = asyncHandler(async (req: Request, res: R
   try {
     const { notificationId } = notificationIdQuerySchema.parse(req.params);
     const { message, startDate, endDate, sendToAll, accountId } = notificationBodySchema.parse(req.body);
-    const notification = await notificationsService.updateNotification(
+    const notification = await notificationsService.updateNotification({
       message,
       startDate,
       endDate,
       sendToAll,
       accountId,
-      notificationId,
-    );
+      id: notificationId,
+    });
     res.status(200).json({ message: 'Notification updated successfully', result: notification });
   } catch (error) {
     if (error instanceof z.ZodError) {

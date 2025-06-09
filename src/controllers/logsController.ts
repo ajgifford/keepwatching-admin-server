@@ -14,7 +14,7 @@ interface LogEntry {
   logFile?: string;
 }
 
-interface HTTPLogEntry extends LogEntry {
+interface AppLogEntry extends LogEntry {
   logId: string;
   request?: {
     url?: string;
@@ -62,15 +62,15 @@ const logRegex = /\[([\w\-]+ [\d:]+)\] (?:\x1b?\[\d+m)?(\w+)(?:\x1b?\s?\[\d+m)? 
 
 const LOG_PATHS: Record<string, string> = {
   nginx: '/var/log/nginx/access.log',
-  'KeepWatching-HTTP': `${EXPRESS_LOG_DIRECTORY}/keepwatching-${getCurrentDate()}.log`,
-  'KeepWatching-HTTP-Error': `${EXPRESS_LOG_DIRECTORY}/keepwatching-error.log`,
-  'KeepWatching-Console': `${PM2_LOG_DIRECTORY}/keepwatching-server-out-0.log`,
-  'KeepWatching-Console-Error': `${PM2_LOG_DIRECTORY}/keepwatching-server-error-0.log`,
+  'KeepWatching-App': `${EXPRESS_LOG_DIRECTORY}/keepwatching-${getCurrentDate()}.log`,
+  'KeepWatching-App-Error': `${EXPRESS_LOG_DIRECTORY}/keepwatching-error.log`,
+  'KeepWatching-Console': `${PM2_LOG_DIRECTORY}/keepwatching-api-server-out-0.log`,
+  'KeepWatching-Console-Error': `${PM2_LOG_DIRECTORY}/keepwatching-api-server-error-0.log`,
 };
 
 const SERVICE_MAPPING: { [key: string]: string } = {
-  'KeepWatching-HTTP': 'HTTP',
-  'KeepWatching-HTTP-Error': 'HTTP',
+  'KeepWatching-App': 'App',
+  'KeepWatching-App-Error': 'App',
   nginx: 'nginx',
   'KeepWatching-Console': 'Console',
   'KeepWatching-Console-Error': 'Console-Error',
@@ -90,20 +90,20 @@ export const getLogs = asyncHandler(async (req: Request, res: Response, next: Ne
     const logFiles: { [key: string]: string } = { ...LOG_PATHS };
 
     // Find the latest rotating log for express
-    const latestRotatingLog = findLatestRotatingLog(logFiles['KeepWatching-HTTP']);
+    const latestRotatingLog = findLatestRotatingLog(logFiles['KeepWatching-App']);
     if (latestRotatingLog) {
-      logFiles['KeepWatching-HTTP'] = latestRotatingLog;
+      logFiles['KeepWatching-App'] = latestRotatingLog;
     }
 
     // Find additional rotating logs if date filters are applied
     if (filters.startDate || filters.endDate) {
-      const allRotatingLogs = findAllRotatingLogs(LOG_PATHS['KeepWatching-HTTP']);
+      const allRotatingLogs = findAllRotatingLogs(LOG_PATHS['KeepWatching-App']);
 
       // Add each rotating log with its own key
       allRotatingLogs.forEach((logPath, index) => {
         if (index > 0) {
           // Skip the first one as it's already included
-          logFiles[`KeepWatching-HTTP-${index}`] = logPath;
+          logFiles[`KeepWatching-App-${index}`] = logPath;
         }
       });
     }
@@ -347,10 +347,10 @@ function loadLogs(logFile: string, service: string): LogEntry[] {
 
   const content = fs.readFileSync(logFile, 'utf-8');
   const lines = content.split('\n');
-  if (service === 'HTTP') {
+  if (service === 'App') {
     return lines
-      .map((line) => parseHTTPLogLine(line, service, logFile))
-      .filter((entry): entry is HTTPLogEntry => entry !== null);
+      .map((line) => parseAppLogLine(line, service, logFile))
+      .filter((entry): entry is AppLogEntry => entry !== null);
   } else if (service === 'nginx') {
     return lines
       .map((line) => parseNginxLogLine(line, logFile))
@@ -429,7 +429,7 @@ function parseLogLine(line: string, service: string, logFile: string): LogEntry 
   return null;
 }
 
-function parseHTTPLogLine(line: string, service: string, logFile: string): HTTPLogEntry | null {
+function parseAppLogLine(line: string, service: string, logFile: string): AppLogEntry | null {
   try {
     const parsed = JSON.parse(line);
     return {

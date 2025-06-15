@@ -1,37 +1,30 @@
+import { ServiceHealth, ServiceStatus } from '@ajgifford/keepwatching-types';
 import { exec } from 'child_process';
 import { NextFunction, Request, Response } from 'express';
 import asyncHandler from 'express-async-handler';
 
-export const getServiceStatuses = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+export const getServicesHealth = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const statuses = await checkServicesStatus();
+    const statuses = await checkServicesHealth();
     res.json(statuses);
   } catch (error) {
     next(error);
   }
 });
 
-interface ServiceStatus {
-  name: string;
-  status: 'running' | 'stopped' | 'error';
-  uptime: string;
-  memory: string;
-  cpu: string;
-}
-
-async function checkServicesStatus(): Promise<ServiceStatus[]> {
+async function checkServicesHealth(): Promise<ServiceHealth[]> {
   const services = ['express', 'nginx', 'pm2'];
-  const statuses: ServiceStatus[] = [];
+  const statuses: ServiceHealth[] = [];
 
   for (const service of services) {
     try {
-      const status = await checkServiceStatus(service);
+      const status = await checkServiceHealth(service);
       statuses.push(status);
     } catch (error) {
       console.error(`Error checking ${service} status:`, error);
       statuses.push({
         name: service,
-        status: 'error',
+        status: ServiceStatus.ERROR,
         uptime: 'N/A',
         memory: 'N/A',
         cpu: 'N/A',
@@ -42,7 +35,7 @@ async function checkServicesStatus(): Promise<ServiceStatus[]> {
   return statuses;
 }
 
-async function checkServiceStatus(service: string): Promise<ServiceStatus> {
+async function checkServiceHealth(service: string): Promise<ServiceHealth> {
   return new Promise((resolve, reject) => {
     let cmd = '';
     switch (service) {
@@ -64,7 +57,7 @@ async function checkServiceStatus(service: string): Promise<ServiceStatus> {
       if (error && service !== 'express') {
         resolve({
           name: service,
-          status: 'stopped',
+          status: ServiceStatus.STOPPED,
           uptime: 'N/A',
           memory: 'N/A',
           cpu: 'N/A',
@@ -73,16 +66,16 @@ async function checkServiceStatus(service: string): Promise<ServiceStatus> {
       }
 
       // Parse command output based on service
-      let status: ServiceStatus;
+      let status: ServiceHealth;
       switch (service) {
         case 'nginx':
-          status = parseNginxStatus(stdout);
+          status = parseNginxHealth(stdout);
           break;
         case 'pm2':
-          status = parsePM2Status(stdout);
+          status = parsePM2Health(stdout);
           break;
         case 'express':
-          status = parseExpressStatus(stdout);
+          status = parseExpressHealth(stdout);
           break;
         default:
           reject(new Error('Invalid service'));
@@ -94,13 +87,13 @@ async function checkServiceStatus(service: string): Promise<ServiceStatus> {
   });
 }
 
-function parseNginxStatus(stdout: string): ServiceStatus {
+function parseNginxHealth(stdout: string): ServiceHealth {
   const isActive = stdout.includes('active (running)');
   const uptime = stdout.match(/; ([^;]+) ago/)?.[1] || 'N/A';
 
   return {
     name: 'nginx',
-    status: isActive ? 'running' : 'stopped',
+    status: isActive ? ServiceStatus.RUNNING : ServiceStatus.STOPPED,
     uptime,
     memory: extractMemoryUsage(stdout),
     cpu: extractCPUUsage(stdout),
@@ -121,14 +114,14 @@ function extractCPUUsage(stdout: string): string {
   return cpuMatch ? cpuMatch[1] : '0%';
 }
 
-function parsePM2Status(stdout: string): ServiceStatus {
+function parsePM2Health(stdout: string): ServiceHealth {
   try {
     const processes = JSON.parse(stdout);
     const process = processes[0];
 
     return {
       name: 'pm2',
-      status: process?.pm2_env?.status === 'online' ? 'running' : 'stopped',
+      status: process?.pm2_env?.status === 'online' ? ServiceStatus.RUNNING : ServiceStatus.STOPPED,
       uptime: formatUptime(process?.pm2_env?.pm_uptime),
       memory: formatBytes(process?.monit?.memory),
       cpu: `${process?.monit?.cpu}%`,
@@ -136,7 +129,7 @@ function parsePM2Status(stdout: string): ServiceStatus {
   } catch {
     return {
       name: 'pm2',
-      status: 'error',
+      status: ServiceStatus.ERROR,
       uptime: 'N/A',
       memory: 'N/A',
       cpu: 'N/A',
@@ -144,13 +137,13 @@ function parsePM2Status(stdout: string): ServiceStatus {
   }
 }
 
-function parseExpressStatus(stdout: string): ServiceStatus {
+function parseExpressHealth(stdout: string): ServiceHealth {
   const processLines = stdout.split('\n').filter((line) => line.includes('node') && !line.includes('grep'));
 
   if (processLines.length === 0) {
     return {
       name: 'express',
-      status: 'stopped',
+      status: ServiceStatus.STOPPED,
       uptime: 'N/A',
       memory: 'N/A',
       cpu: 'N/A',
@@ -160,7 +153,7 @@ function parseExpressStatus(stdout: string): ServiceStatus {
   const parts = processLines[0].split(/\s+/);
   return {
     name: 'express',
-    status: 'running',
+    status: ServiceStatus.RUNNING,
     uptime: 'N/A', // Need to get from process start time
     memory: `${Math.round(parseInt(parts[5]) / 1024)}MB`,
     cpu: `${parts[2]}%`,

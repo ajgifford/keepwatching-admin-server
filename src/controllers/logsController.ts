@@ -1,59 +1,18 @@
 import { getExpressLogDir, getPM2LogDir } from '@ajgifford/keepwatching-common-server/config';
+import {
+  AppLogEntry,
+  ErrorLogEntry,
+  LogEntry,
+  LogFilter,
+  LogLevel,
+  LogService,
+  NginxLogEntry,
+} from '@ajgifford/keepwatching-types';
 import { NextFunction, Request, Response } from 'express';
 import asyncHandler from 'express-async-handler';
 import fs from 'fs';
 import path from 'path';
 import { Tail } from 'tail';
-
-interface LogEntry {
-  timestamp: string;
-  service: string;
-  message: string;
-  level: 'info' | 'warn' | 'error';
-  version?: string;
-  logFile?: string;
-}
-
-interface AppLogEntry extends LogEntry {
-  logId: string;
-  request?: {
-    url?: string;
-    method?: string;
-    body?: object;
-    params?: object;
-    query?: object;
-  };
-  response?: {
-    statusCode?: number;
-    body?: string;
-  };
-}
-
-interface NginxLogEntry extends LogEntry {
-  remoteAddr: string;
-  remoteUser: string;
-  request: string;
-  status: number;
-  bytesSent: number;
-  httpReferer: string;
-  httpUserAgent: string;
-  gzipRatio?: string;
-}
-
-interface ErrorLogEntry extends LogEntry {
-  stack: string[];
-  fullText: string;
-  details?: string;
-}
-
-interface LogFilter {
-  service?: string;
-  level?: string;
-  startDate?: string | null;
-  endDate?: string | null;
-  searchTerm?: string;
-  limit?: number;
-}
 
 const EXPRESS_LOG_DIRECTORY = getExpressLogDir();
 const PM2_LOG_DIRECTORY = getPM2LogDir();
@@ -68,12 +27,12 @@ const LOG_PATHS: Record<string, string> = {
   'KeepWatching-Console-Error': `${PM2_LOG_DIRECTORY}/keepwatching-api-server-error-0.log`,
 };
 
-const SERVICE_MAPPING: { [key: string]: string } = {
-  'KeepWatching-App': 'App',
-  'KeepWatching-App-Error': 'App',
-  nginx: 'nginx',
-  'KeepWatching-Console': 'Console',
-  'KeepWatching-Console-Error': 'Console-Error',
+const SERVICE_MAPPING: { [key: string]: LogService } = {
+  'KeepWatching-App': LogService.APP,
+  'KeepWatching-App-Error': LogService.APP,
+  nginx: LogService.NGINX,
+  'KeepWatching-Console': LogService.CONSOLE,
+  'KeepWatching-Console-Error': LogService.CONSOLE_ERROR,
 };
 
 export const getLogs = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
@@ -245,7 +204,7 @@ export const streamLogs = asyncHandler(async (req: Request, res: Response, next:
               timestamp: new Date().toISOString(),
               service: SERVICE_MAPPING[svc] || svc,
               message: combinedMessage,
-              level: 'error',
+              level: LogLevel.ERROR,
               logFile: path.basename(logPath),
             };
 
@@ -265,9 +224,13 @@ export const streamLogs = asyncHandler(async (req: Request, res: Response, next:
       // Notify client that this log file is not available
       const notFoundEntry: LogEntry = {
         timestamp: new Date().toISOString(),
-        service: service.includes('express') ? 'express' : service.includes('pm2') ? 'pm2' : service,
+        service: service.includes('express')
+          ? LogService.APP
+          : service.includes('pm2')
+            ? LogService.CONSOLE
+            : LogService.SYSTEM,
         message: `Log file not found: ${logPath}`,
-        level: 'warn',
+        level: LogLevel.WARN,
         logFile: path.basename(logPath),
       };
       res.write(`data: ${JSON.stringify(notFoundEntry)}\n\n`);
@@ -280,11 +243,11 @@ export const streamLogs = asyncHandler(async (req: Request, res: Response, next:
   // Initial status message
   const statusEntry: LogEntry = {
     timestamp: new Date().toISOString(),
-    service: 'system',
+    service: LogService.SYSTEM,
     message: `Log streaming started. Available logs: [${availableLogs.join(', ')}]${
       unavailableLogs.length > 0 ? `, Unavailable logs: [${unavailableLogs.join(', ')}]` : ''
     }`,
-    level: 'info',
+    level: LogLevel.INFO,
   };
   res.write(`data: ${JSON.stringify(statusEntry)}\n\n`);
 
@@ -339,7 +302,7 @@ function findLatestRotatingLog(basePath: string): string | null {
   return logs.length > 0 ? logs[0] : null;
 }
 
-function loadLogs(logFile: string, service: string): LogEntry[] {
+function loadLogs(logFile: string, service: LogService): LogEntry[] {
   if (!fileExists(logFile)) {
     console.log('File does not exist', logFile);
     return [];
@@ -347,19 +310,19 @@ function loadLogs(logFile: string, service: string): LogEntry[] {
 
   const content = fs.readFileSync(logFile, 'utf-8');
   const lines = content.split('\n');
-  if (service === 'App') {
+  if (service === LogService.APP) {
     return lines
       .map((line) => parseAppLogLine(line, service, logFile))
       .filter((entry): entry is AppLogEntry => entry !== null);
-  } else if (service === 'nginx') {
+  } else if (service === LogService.NGINX) {
     return lines
       .map((line) => parseNginxLogLine(line, logFile))
       .filter((entry): entry is NginxLogEntry => entry !== null);
-  } else if (service === 'Console') {
+  } else if (service === LogService.CONSOLE) {
     return lines
       .map((line) => parseLogLine(line, service, logFile))
       .filter((entry): entry is LogEntry => entry !== null);
-  } else if (service === 'Console-Error') {
+  } else if (service === LogService.CONSOLE_ERROR) {
     return parseErrorLogFile(content, service, logFile);
   } else {
     return [];
@@ -375,10 +338,10 @@ function fileExists(path: string): boolean {
   }
 }
 
-function determineLogLevel(service: string, logLine: string): 'info' | 'warn' | 'error' {
+function determineLogLevel(service: string, logLine: string): LogLevel {
   // If the log is from an error log file, mark it as error level
   if (service.includes('error')) {
-    return 'error';
+    return LogLevel.ERROR;
   }
 
   const line = logLine.toLowerCase();
@@ -391,12 +354,12 @@ function determineLogLevel(service: string, logLine: string): 'info' | 'warn' | 
     line.includes('code:') ||
     (line.startsWith('at ') && line.includes('/'))
   ) {
-    return 'error';
+    return LogLevel.ERROR;
   }
   if (line.includes('warn') || line.includes('warning')) {
-    return 'warn';
+    return LogLevel.WARN;
   }
-  return 'info';
+  return LogLevel.INFO;
 }
 
 function filterLogs(logs: LogEntry[], filter: LogFilter): LogEntry[] {
@@ -419,9 +382,9 @@ function parseLogLine(line: string, service: string, logFile: string): LogEntry 
     const [_fullMatch, dateTime, logLevel, version, message] = match;
     return {
       timestamp: dateTime,
-      level: logLevel as 'info' | 'warn' | 'error',
+      level: logLevel as LogLevel,
       message: message,
-      service,
+      service: service as LogService,
       version,
       logFile: path.basename(logFile),
     };
@@ -429,7 +392,7 @@ function parseLogLine(line: string, service: string, logFile: string): LogEntry 
   return null;
 }
 
-function parseAppLogLine(line: string, service: string, logFile: string): AppLogEntry | null {
+function parseAppLogLine(line: string, service: LogService, logFile: string): AppLogEntry | null {
   try {
     const parsed = JSON.parse(line);
     return {
@@ -464,8 +427,8 @@ function parseNginxLogLine(line: string, logFile: string): NginxLogEntry | null 
   if (!match) return null;
 
   return {
-    service: 'nginx',
-    level: 'info',
+    service: LogService.NGINX,
+    level: LogLevel.INFO,
     message: `Request: ${match[5]} >>> Status: ${match[6]}`,
     logFile: path.basename(logFile),
     remoteAddr: match[1],
@@ -480,7 +443,7 @@ function parseNginxLogLine(line: string, logFile: string): NginxLogEntry | null 
   };
 }
 
-function parseErrorLogFile(logContent: string, service: string, logFile: string): ErrorLogEntry[] {
+function parseErrorLogFile(logContent: string, service: LogService, logFile: string): ErrorLogEntry[] {
   const errors: ErrorLogEntry[] = [];
   let currentError: ErrorLogEntry | null = null;
   const lines: string[] = logContent.split('\n');
@@ -500,7 +463,7 @@ function parseErrorLogFile(logContent: string, service: string, logFile: string)
         message: line.trim(),
         stack: [],
         fullText: line.trim(),
-        level: 'error',
+        level: LogLevel.ERROR,
         service: service,
         timestamp: new Date().toISOString(),
         logFile: path.basename(logFile),
@@ -539,7 +502,7 @@ function parseErrorLogFile(logContent: string, service: string, logFile: string)
         message: line.trim(),
         stack: [],
         fullText: line.trim(),
-        level: 'error',
+        level: LogLevel.ERROR,
         service: service,
         timestamp: new Date().toISOString(),
         logFile: path.basename(logFile),

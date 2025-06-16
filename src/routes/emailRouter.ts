@@ -1,11 +1,11 @@
-import express from 'express';
 import {
   previewWeeklyEmailByAccount,
   sendWeeklyDigestEmailByAccount,
   sendWeeklyDiscoverEmailByAccount,
   sendWeeklyEmailByAccount,
   sendWeeklyEmailToAll,
-} from 'src/controllers/emailController';
+} from '../controllers/emailController';
+import express from 'express';
 
 const router = express.Router();
 

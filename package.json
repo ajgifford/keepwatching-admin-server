@@ -6,8 +6,8 @@
   "author": "Gifford Family Dev",
   "private": true,
   "dependencies": {
-    "@ajgifford/keepwatching-common-server": "^0.2.4",
-    "@ajgifford/keepwatching-types": "^0.1.3",
+    "@ajgifford/keepwatching-common-server": "^0.3.0",
+    "@ajgifford/keepwatching-types": "^0.2.0",
     "body-parser": "^1.20.3",
     "compression": "^1.8.0",
     "cors": "^2.8.5",
@@ -39,12 +39,15 @@
     "eslint-config-prettier": "^10.0.1",
     "globals": "^15.15.0",
     "prettier": "^3.5.1",
+    "rimraf": "^6.0.1",
     "tsx": "^4.19.2",
     "typescript": "^5.7.3",
     "typescript-eslint": "^8.24.0"
   },
   "scripts": {
     "build": "npx tsc",
+    "clean": "rimraf dist",
+    "rebuild": "yarn clean && yarn build",
     "start": "node dist/server.js",
     "dev": "tsx watch src/server.ts",
     "format": "prettier --config ./prettier.config.js . --write",

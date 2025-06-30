@@ -23,7 +23,12 @@ import { ErrorMessages, appLogger, cliLogger } from '@ajgifford/keepwatching-com
 import { responseInterceptor } from '@ajgifford/keepwatching-common-server/middleware';
 import { databaseService, initializeEmailService } from '@ajgifford/keepwatching-common-server/services';
 import { shutdownJobs } from '@ajgifford/keepwatching-common-server/services';
-import { GlobalErrorHandler, initializeFirebase, shutdownFirebase } from '@ajgifford/keepwatching-common-server/utils';
+import {
+  GlobalErrorHandler,
+  initializeFirebase,
+  loadStreamingService,
+  shutdownFirebase,
+} from '@ajgifford/keepwatching-common-server/utils';
 import bodyParser from 'body-parser';
 import compression from 'compression';
 import cors from 'cors';
@@ -76,6 +81,10 @@ app.use(errorHandler);
 
 const startServer = async () => {
   try {
+    cliLogger.info('Fetching initial data from the database...');
+    await loadStreamingService();
+    cliLogger.info('Data fetched and cached successfully.');
+
     if (isEmailEnabled()) {
       const emailValidation = validateEmailConfig();
 

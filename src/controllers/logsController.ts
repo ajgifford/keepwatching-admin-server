@@ -596,7 +596,7 @@ function parseLogTimestamp(dateTimeStr: string): string {
 
 function normalizeTimestamp(timestamp: string): string {
   if (timestamp.includes('/') && timestamp.includes(':')) {
-    // Parse Nginx format
+    // Parse Nginx format: 03/Jul/2025:13:16:57 +0000
     const regex = /(\d+)\/(\w+)\/(\d+):(\d+):(\d+):(\d+) ([+-]\d+)/;
     const match = timestamp.match(regex);
 
@@ -617,14 +617,34 @@ function normalizeTimestamp(timestamp: string): string {
         Dec: 11,
       };
 
+      // Parse the timezone offset (+0000 format)
+      const timezoneOffset = parseInt(timezone);
+      const offsetHours = Math.floor(Math.abs(timezoneOffset) / 100);
+      const offsetMinutes = Math.abs(timezoneOffset) % 100;
+      const totalOffsetMinutes = (offsetHours * 60 + offsetMinutes) * (timezoneOffset >= 0 ? 1 : -1);
+
+      // Create date in the original timezone, then convert to UTC
       const date = new Date(
-        Date.UTC(parseInt(year), months[month], parseInt(day), parseInt(hours), parseInt(minutes), parseInt(seconds)),
+        parseInt(year),
+        months[month],
+        parseInt(day),
+        parseInt(hours),
+        parseInt(minutes),
+        parseInt(seconds),
       );
+
+      // Adjust for the timezone offset to get true UTC
+      date.setMinutes(date.getMinutes() - totalOffsetMinutes);
 
       return date.toISOString();
     }
   }
 
-  // Already in ISO format or other standard format
-  return new Date(timestamp).toISOString();
+  // For timestamps that are already in a standard format
+  try {
+    return new Date(timestamp).toISOString();
+  } catch (error) {
+    // Fallback: return current time if parsing fails
+    return new Date().toISOString();
+  }
 }

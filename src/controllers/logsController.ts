@@ -458,7 +458,7 @@ function parseErrorLogFile(logContent: string, service: LogService, logFile: str
     const timestampMatch = line.match(timestampRegex);
 
     if (timestampMatch) {
-      const [, dateTimeStr, logLevel, message] = timestampMatch;
+      const [dateTimeStr, logLevel, message] = timestampMatch;
 
       // If we were tracking a previous error, push it to results before starting a new one
       if (currentError) {
@@ -473,7 +473,7 @@ function parseErrorLogFile(logContent: string, service: LogService, logFile: str
         message: message.trim(),
         stack: [],
         fullText: message.trim(),
-        level: logLevel.toUpperCase() as LogLevel,
+        level: logLevel.toLowerCase() as LogLevel,
         service: service,
         timestamp: timestamp,
         logFile: path.basename(logFile),

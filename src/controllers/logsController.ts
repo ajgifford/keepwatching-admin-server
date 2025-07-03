@@ -597,12 +597,11 @@ function parseLogTimestamp(dateTimeStr: string): string {
 function normalizeTimestamp(timestamp: string): string {
   if (timestamp.includes('/') && timestamp.includes(':')) {
     // Parse Nginx format: 02/Jul/2025:02:13:02 -0500
-    // We want to preserve the local time as shown, not convert to UTC
     const regex = /(\d+)\/(\w+)\/(\d+):(\d+):(\d+):(\d+) ([+-]\d+)/;
     const match = timestamp.match(regex);
 
     if (match) {
-      const [, day, month, year, hours, minutes, seconds] = match;
+      const [, day, month, year, hours, minutes, seconds, timezone] = match;
       const months: { [key: string]: number } = {
         Jan: 0,
         Feb: 1,
@@ -618,13 +617,29 @@ function normalizeTimestamp(timestamp: string): string {
         Dec: 11,
       };
 
-      // Create date using the local time values, treating them as UTC for ISO string format
-      // This preserves the time as displayed in the logs
-      const date = new Date(
+      // Parse the timezone offset (-0500 means 5 hours behind UTC)
+      const timezoneOffset = parseInt(timezone);
+      const offsetHours = Math.floor(Math.abs(timezoneOffset) / 100);
+      const offsetMinutes = Math.abs(timezoneOffset) % 100;
+      const totalOffsetMinutes = offsetHours * 60 + offsetMinutes;
+
+      // Create date in UTC first
+      const utcDate = new Date(
         Date.UTC(parseInt(year), months[month], parseInt(day), parseInt(hours), parseInt(minutes), parseInt(seconds)),
       );
 
-      return date.toISOString();
+      // Adjust for timezone offset
+      // If timezone is -0500 (5 hours behind UTC), the local time needs to be converted to UTC
+      // by adding 5 hours (because the logged time is 5 hours behind UTC)
+      if (timezoneOffset < 0) {
+        // Negative offset means behind UTC, so add the offset to get UTC
+        utcDate.setUTCMinutes(utcDate.getUTCMinutes() + totalOffsetMinutes);
+      } else {
+        // Positive offset means ahead of UTC, so subtract the offset to get UTC
+        utcDate.setUTCMinutes(utcDate.getUTCMinutes() - totalOffsetMinutes);
+      }
+
+      return utcDate.toISOString();
     }
   }
 

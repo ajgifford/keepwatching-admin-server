@@ -596,12 +596,13 @@ function parseLogTimestamp(dateTimeStr: string): string {
 
 function normalizeTimestamp(timestamp: string): string {
   if (timestamp.includes('/') && timestamp.includes(':')) {
-    // Parse Nginx format: 03/Jul/2025:13:16:57 +0000
+    // Parse Nginx format: 02/Jul/2025:02:13:02 -0500
+    // We want to preserve the local time as shown, not convert to UTC
     const regex = /(\d+)\/(\w+)\/(\d+):(\d+):(\d+):(\d+) ([+-]\d+)/;
     const match = timestamp.match(regex);
 
     if (match) {
-      const [, day, month, year, hours, minutes, seconds, timezone] = match;
+      const [, day, month, year, hours, minutes, seconds] = match;
       const months: { [key: string]: number } = {
         Jan: 0,
         Feb: 1,
@@ -617,24 +618,11 @@ function normalizeTimestamp(timestamp: string): string {
         Dec: 11,
       };
 
-      // Parse the timezone offset (+0000 format)
-      const timezoneOffset = parseInt(timezone);
-      const offsetHours = Math.floor(Math.abs(timezoneOffset) / 100);
-      const offsetMinutes = Math.abs(timezoneOffset) % 100;
-      const totalOffsetMinutes = (offsetHours * 60 + offsetMinutes) * (timezoneOffset >= 0 ? 1 : -1);
-
-      // Create date in the original timezone, then convert to UTC
+      // Create date using the local time values, treating them as UTC for ISO string format
+      // This preserves the time as displayed in the logs
       const date = new Date(
-        parseInt(year),
-        months[month],
-        parseInt(day),
-        parseInt(hours),
-        parseInt(minutes),
-        parseInt(seconds),
+        Date.UTC(parseInt(year), months[month], parseInt(day), parseInt(hours), parseInt(minutes), parseInt(seconds)),
       );
-
-      // Adjust for the timezone offset to get true UTC
-      date.setMinutes(date.getMinutes() - totalOffsetMinutes);
 
       return date.toISOString();
     }

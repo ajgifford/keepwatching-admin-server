@@ -404,7 +404,7 @@ function parseAppLogLine(line: string, service: LogService, logFile: string): Ap
       logFile: path.basename(logFile),
       request: parsed.data?.request
         ? {
-            url: parsed.data.request.url || 'N/A',
+            url: parsed.data.request.path || 'N/A',
             method: parsed.data.request.method || 'N/A',
             body: parsed.data.request.body || {},
             params: parsed.data.request.params || {},

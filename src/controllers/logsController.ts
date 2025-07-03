@@ -448,11 +448,39 @@ function parseErrorLogFile(logContent: string, service: LogService, logFile: str
   let currentError: ErrorLogEntry | null = null;
   const lines: string[] = logContent.split('\n');
 
+  // Regex to match timestamp pattern [Jul-03-2025 12:49:28] ERROR:
+  const timestampRegex = /^\[([A-Za-z]{3}-\d{2}-\d{4} \d{2}:\d{2}:\d{2})\]\s+(\w+):\s*(.*)$/;
+
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
 
-    // Check if this line is the start of a new error
-    if (line.includes('Error:') || line.includes('ValidationError:') || line.includes('FirebaseAuthError:')) {
+    // Check for timestamp pattern first
+    const timestampMatch = line.match(timestampRegex);
+
+    if (timestampMatch) {
+      const [, dateTimeStr, logLevel, message] = timestampMatch;
+
+      // If we were tracking a previous error, push it to results before starting a new one
+      if (currentError) {
+        errors.push(currentError);
+      }
+
+      // Parse the timestamp string to ISO format
+      const timestamp = parseLogTimestamp(dateTimeStr);
+
+      // Start tracking a new error
+      currentError = {
+        message: message.trim(),
+        stack: [],
+        fullText: message.trim(),
+        level: logLevel.toUpperCase() as LogLevel,
+        service: service,
+        timestamp: timestamp,
+        logFile: path.basename(logFile),
+      };
+    }
+    // Check if this line is the start of a new error (fallback for lines without timestamps)
+    else if (line.includes('Error:') || line.includes('ValidationError:') || line.includes('FirebaseAuthError:')) {
       // If we were tracking a previous error, push it to results before starting a new one
       if (currentError) {
         errors.push(currentError);
@@ -515,6 +543,55 @@ function parseErrorLogFile(logContent: string, service: LogService, logFile: str
   }
 
   return errors;
+}
+
+/**
+ * Parse timestamp from log format [Jul-03-2025 12:49:28] to ISO string
+ */
+function parseLogTimestamp(dateTimeStr: string): string {
+  try {
+    // Parse format: Jul-03-2025 12:49:28
+    const [datePart, timePart] = dateTimeStr.split(' ');
+    const [month, day, year] = datePart.split('-');
+    const [hours, minutes, seconds] = timePart.split(':');
+
+    // Convert month abbreviation to number
+    const monthMap: { [key: string]: number } = {
+      Jan: 0,
+      Feb: 1,
+      Mar: 2,
+      Apr: 3,
+      May: 4,
+      Jun: 5,
+      Jul: 6,
+      Aug: 7,
+      Sep: 8,
+      Oct: 9,
+      Nov: 10,
+      Dec: 11,
+    };
+
+    const monthNum = monthMap[month];
+    if (monthNum === undefined) {
+      throw new Error(`Invalid month: ${month}`);
+    }
+
+    // Create date object and convert to ISO string
+    const date = new Date(
+      parseInt(year),
+      monthNum,
+      parseInt(day),
+      parseInt(hours),
+      parseInt(minutes),
+      parseInt(seconds),
+    );
+
+    return date.toISOString();
+  } catch (error) {
+    console.warn(`Failed to parse timestamp "${dateTimeStr}":`, error);
+    // Fallback to current timestamp
+    return new Date().toISOString();
+  }
 }
 
 function normalizeTimestamp(timestamp: string): string {

@@ -1,5 +1,4 @@
 import { adminMovieService, adminShowService } from '@ajgifford/keepwatching-common-server/services';
-import { updateMovies, updateShows } from '@ajgifford/keepwatching-common-server/services';
 import { NextFunction, Request, Response } from 'express';
 import asyncHandler from 'express-async-handler';
 
@@ -127,7 +126,7 @@ export const updateShow = asyncHandler(async (req: Request, res: Response, next:
 // POST /api/v1/shows/updateAll
 export const updateAllShows = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
   try {
-    updateShows();
+    adminShowService.updateAllShows();
     res.status(200).json({ message: `Show update process started successfully` });
   } catch (error) {
     next(error);
@@ -148,7 +147,7 @@ export const updateMovie = asyncHandler(async (req: Request, res: Response, next
 // POST /api/v1/movies/updateAll
 export const updateAllMovies = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
   try {
-    updateMovies();
+    adminMovieService.updateAllMovies();
     res.status(200).json({ message: 'Movie update process started successfully' });
   } catch (error) {
     next(error);

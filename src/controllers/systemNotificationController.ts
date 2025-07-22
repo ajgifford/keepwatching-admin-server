@@ -54,14 +54,32 @@ const notificationIdQuerySchema = z.object({
   notificationId: z.string().regex(/^\d+$/, 'Notification ID must be numeric').transform(Number),
 });
 
-const getExpiredParamSchema = z.object({
-  expired: z.coerce.boolean(),
+const getNotificationsQuerySchema = z.object({
+  expired: z
+    .union([z.string(), z.boolean(), z.undefined()])
+    .transform((val) => {
+      if (val === undefined) return false; // Default to false when not provided
+      if (typeof val === 'boolean') return val;
+      if (typeof val === 'string') {
+        const lower = val.toLowerCase();
+        return lower === 'true' || lower === '1';
+      }
+      return false;
+    })
+    .optional()
+    .default(false),
 });
 
 // GET /api/v1/systemNotifications
 export const getAllSystemNotifications = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { expired } = getExpiredParamSchema.parse(req.query);
+    const queryResult = getNotificationsQuerySchema.safeParse(req.query);
+
+    if (!queryResult.success) {
+      throw new BadRequestError(`Invalid query parameters: ${queryResult.error.errors[0].message}`);
+    }
+
+    const { expired } = queryResult.data;
     const notifications = await notificationsService.getAllNotifications(expired);
     res.status(200).json({ message: 'Retrieved all notifications', results: notifications });
   } catch (error) {

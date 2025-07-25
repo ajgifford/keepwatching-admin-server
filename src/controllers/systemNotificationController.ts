@@ -7,6 +7,9 @@ import { z } from 'zod';
 const notificationBodySchema = z
   .object({
     message: z.string().min(5, 'Message must be at least 5 characters long'),
+    type: z.enum(['tv', 'movie', 'issue', 'general', 'feature'], {
+      errorMap: () => ({ message: 'Type must be one of: tv, movie, issue, general, feature' }),
+    }),
     startDate: z.string().datetime({ message: 'Start date must be ISO format' }),
     endDate: z.string().datetime({ message: 'End date must be ISO format' }),
     sendToAll: z.boolean(),
@@ -93,8 +96,8 @@ export const getAllSystemNotifications = asyncHandler(async (req: Request, res: 
 // POST /api/v1/systemNotifications
 export const addSystemNotification = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { message, startDate, endDate, sendToAll, accountId } = notificationBodySchema.parse(req.body);
-    await notificationsService.addNotification({ message, startDate, endDate, sendToAll, accountId });
+    const { message, startDate, endDate, sendToAll, accountId, type } = notificationBodySchema.parse(req.body);
+    await notificationsService.addNotification({ message, startDate, endDate, sendToAll, accountId, type });
     res.status(200).json({ message: 'Notification added' });
   } catch (error) {
     if (error instanceof z.ZodError) {
@@ -108,13 +111,14 @@ export const addSystemNotification = asyncHandler(async (req: Request, res: Resp
 export const updateSystemNotification = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { notificationId } = notificationIdQuerySchema.parse(req.params);
-    const { message, startDate, endDate, sendToAll, accountId } = notificationBodySchema.parse(req.body);
+    const { message, startDate, endDate, sendToAll, accountId, type } = notificationBodySchema.parse(req.body);
     const notification = await notificationsService.updateNotification({
       message,
       startDate,
       endDate,
       sendToAll,
       accountId,
+      type,
       id: notificationId,
     });
     res.status(200).json({ message: 'Notification updated successfully', result: notification });

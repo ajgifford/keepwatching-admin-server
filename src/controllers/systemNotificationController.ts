@@ -5,6 +5,7 @@ import asyncHandler from 'express-async-handler';
 import { z } from 'zod';
 
 const baseNotificationBodySchema = z.object({
+  title: z.string().min(5, 'Title must be at least 5 characters long'),
   message: z.string().min(5, 'Message must be at least 5 characters long'),
   type: z.enum(['tv', 'movie', 'issue', 'general', 'feature'], {
     errorMap: () => ({ message: 'Type must be one of: tv, movie, issue, general, feature' }),
@@ -104,8 +105,8 @@ export const getAllSystemNotifications = asyncHandler(async (req: Request, res: 
 // POST /api/v1/systemNotifications
 export const addSystemNotification = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { message, startDate, endDate, sendToAll, accountId, type } = notificationBodySchema.parse(req.body);
-    await notificationsService.addNotification({ message, startDate, endDate, sendToAll, accountId, type });
+    const { title, message, startDate, endDate, sendToAll, accountId, type } = notificationBodySchema.parse(req.body);
+    await notificationsService.addNotification({ title, message, startDate, endDate, sendToAll, accountId, type });
     res.status(200).json({ message: 'Notification added' });
   } catch (error) {
     if (error instanceof z.ZodError) {
@@ -119,8 +120,11 @@ export const addSystemNotification = asyncHandler(async (req: Request, res: Resp
 export const updateSystemNotification = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { notificationId } = notificationIdQuerySchema.parse(req.params);
-    const { message, startDate, endDate, sendToAll, accountId, type } = updateNotificationBodySchema.parse(req.body);
+    const { title, message, startDate, endDate, sendToAll, accountId, type } = updateNotificationBodySchema.parse(
+      req.body,
+    );
     const notification = await notificationsService.updateNotification({
+      title,
       message,
       startDate,
       endDate,

@@ -4,54 +4,62 @@ import { NextFunction, Request, Response } from 'express';
 import asyncHandler from 'express-async-handler';
 import { z } from 'zod';
 
-const notificationBodySchema = z
-  .object({
-    message: z.string().min(5, 'Message must be at least 5 characters long'),
-    type: z.enum(['tv', 'movie', 'issue', 'general', 'feature'], {
-      errorMap: () => ({ message: 'Type must be one of: tv, movie, issue, general, feature' }),
-    }),
-    startDate: z.string().datetime({ message: 'Start date must be ISO format' }),
-    endDate: z.string().datetime({ message: 'End date must be ISO format' }),
-    sendToAll: z.boolean(),
-    accountId: z.nullable(z.number()),
-  })
-  .superRefine((data, ctx) => {
-    const startDate = new Date(data.startDate);
-    const endDate = new Date(data.endDate);
-    const now = new Date();
+const baseNotificationBodySchema = z.object({
+  message: z.string().min(5, 'Message must be at least 5 characters long'),
+  type: z.enum(['tv', 'movie', 'issue', 'general', 'feature'], {
+    errorMap: () => ({ message: 'Type must be one of: tv, movie, issue, general, feature' }),
+  }),
+  startDate: z.string().datetime({ message: 'Start date must be ISO format' }),
+  endDate: z.string().datetime({ message: 'End date must be ISO format' }),
+  sendToAll: z.boolean(),
+  accountId: z.nullable(z.number()),
+});
 
-    if (startDate <= now) {
-      ctx.addIssue({
-        path: ['startDate'],
-        code: z.ZodIssueCode.custom,
-        message: 'Start date must be in the future',
-      });
-    }
+const commonValidation = (data: any, ctx: any, requireFutureStartDate: boolean = true) => {
+  const startDate = new Date(data.startDate);
+  const endDate = new Date(data.endDate);
+  const now = new Date();
 
-    if (endDate <= startDate) {
-      ctx.addIssue({
-        path: ['endDate'],
-        code: z.ZodIssueCode.custom,
-        message: 'End date must be after start date',
-      });
-    }
+  if (requireFutureStartDate && startDate <= now) {
+    ctx.addIssue({
+      path: ['startDate'],
+      code: z.ZodIssueCode.custom,
+      message: 'Start date must be in the future',
+    });
+  }
 
-    if (data.sendToAll && data.accountId !== null) {
-      ctx.addIssue({
-        path: ['accountId'],
-        code: z.ZodIssueCode.custom,
-        message: 'Account ID must be null if sendToAll is true',
-      });
-    }
+  if (endDate <= startDate) {
+    ctx.addIssue({
+      path: ['endDate'],
+      code: z.ZodIssueCode.custom,
+      message: 'End date must be after start date',
+    });
+  }
 
-    if (!data.sendToAll && (data.accountId === null || typeof data.accountId !== 'number')) {
-      ctx.addIssue({
-        path: ['accountId'],
-        code: z.ZodIssueCode.custom,
-        message: 'Account ID must be a number if sendToAll is false',
-      });
-    }
-  });
+  if (data.sendToAll && data.accountId !== null) {
+    ctx.addIssue({
+      path: ['accountId'],
+      code: z.ZodIssueCode.custom,
+      message: 'Account ID must be null if sendToAll is true',
+    });
+  }
+
+  if (!data.sendToAll && (data.accountId === null || typeof data.accountId !== 'number')) {
+    ctx.addIssue({
+      path: ['accountId'],
+      code: z.ZodIssueCode.custom,
+      message: 'Account ID must be a number if sendToAll is false',
+    });
+  }
+};
+
+const notificationBodySchema = baseNotificationBodySchema.superRefine((data, ctx) => {
+  commonValidation(data, ctx, true);
+});
+
+const updateNotificationBodySchema = baseNotificationBodySchema.superRefine((data, ctx) => {
+  commonValidation(data, ctx, false);
+});
 
 const notificationIdQuerySchema = z.object({
   notificationId: z.string().regex(/^\d+$/, 'Notification ID must be numeric').transform(Number),
@@ -111,7 +119,7 @@ export const addSystemNotification = asyncHandler(async (req: Request, res: Resp
 export const updateSystemNotification = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { notificationId } = notificationIdQuerySchema.parse(req.params);
-    const { message, startDate, endDate, sendToAll, accountId, type } = notificationBodySchema.parse(req.body);
+    const { message, startDate, endDate, sendToAll, accountId, type } = updateNotificationBodySchema.parse(req.body);
     const notification = await notificationsService.updateNotification({
       message,
       startDate,

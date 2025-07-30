@@ -1,4 +1,4 @@
-import { adminMovieService, adminShowService } from '@ajgifford/keepwatching-common-server/services';
+import { adminMovieService, adminShowService, personService } from '@ajgifford/keepwatching-common-server/services';
 import { NextFunction, Request, Response } from 'express';
 import asyncHandler from 'express-async-handler';
 
@@ -185,6 +185,49 @@ export const getMovieProfiles = asyncHandler(async (req: Request, res: Response,
     const profiles = await adminMovieService.getMovieProfiles(Number(movieId));
 
     res.status(200).json({ message: 'Retrieved profiles for movie', results: profiles });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// GET /api/v1/people
+export const getPeople = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const firstLetter = req.query.firstLetter as string;
+    const page = Math.max(1, parseInt(req.query.page as string) || 1);
+    const limit = Math.min(100, parseInt(req.query.limit as string) || 50);
+    const offset = (page - 1) * limit;
+
+    const peopleResult = await personService.getPersons(firstLetter, page, offset, limit);
+
+    res.status(200).json({
+      message: `Retrieved page ${page} of people starting with ${firstLetter}`,
+      pagination: peopleResult.pagination,
+      results: peopleResult.persons,
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// GET /api/v1/people/:personId
+export const getPersonDetails = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { personId } = req.params;
+    const person = await personService.getPersonDetails(Number(personId));
+
+    res.status(200).json({ message: 'Retrieved details for person', results: person });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// POST /api/v1/people/update
+export const updatePerson = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { personId, tmdbId } = req.body;
+    await personService.updatePerson(Number(personId), Number(tmdbId));
+    res.status(200).json({ message: `Person with TMDB Id ${tmdbId} was updated` });
   } catch (error) {
     next(error);
   }

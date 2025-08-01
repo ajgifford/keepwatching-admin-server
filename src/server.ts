@@ -4,8 +4,8 @@ import accountRouter from './routes/accountManagementRouter';
 import contentRouter from './routes/contentRouter';
 import emailRouter from './routes/emailRouter';
 import logRouter from './routes/logRouter';
+import notificationRouter from './routes/notificationsRouter';
 import servicesRouter from './routes/servicesRouter';
-import systemNotificationRouter from './routes/systemNotificationsRouter';
 import { errorHandler } from '@ajgifford/keepwatching-common-server';
 import {
   getEmailConfig,
@@ -75,7 +75,7 @@ app.use(contentRouter);
 app.use(emailRouter);
 app.use(logRouter);
 app.use(servicesRouter);
-app.use(systemNotificationRouter);
+app.use(notificationRouter);
 
 app.use(errorHandler);
 

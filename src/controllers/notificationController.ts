@@ -82,8 +82,8 @@ const getNotificationsQuerySchema = z.object({
     .default(false),
 });
 
-// GET /api/v1/systemNotifications
-export const getAllSystemNotifications = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+// GET /api/v1/notifications
+export const getAllNotifications = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
   try {
     const queryResult = getNotificationsQuerySchema.safeParse(req.query);
 
@@ -102,8 +102,8 @@ export const getAllSystemNotifications = asyncHandler(async (req: Request, res: 
   }
 });
 
-// POST /api/v1/systemNotifications
-export const addSystemNotification = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+// POST /api/v1/notifications
+export const addNotification = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { title, message, startDate, endDate, sendToAll, accountId, type } = notificationBodySchema.parse(req.body);
     await notificationsService.addNotification({ title, message, startDate, endDate, sendToAll, accountId, type });
@@ -116,8 +116,8 @@ export const addSystemNotification = asyncHandler(async (req: Request, res: Resp
   }
 });
 
-// PUT /api/v1/systemNotifications/:notificationId
-export const updateSystemNotification = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+// PUT /api/v1/notifications/:notificationId
+export const updateNotification = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { notificationId } = notificationIdQuerySchema.parse(req.params);
     const { title, message, startDate, endDate, sendToAll, accountId, type } = updateNotificationBodySchema.parse(
@@ -142,8 +142,8 @@ export const updateSystemNotification = asyncHandler(async (req: Request, res: R
   }
 });
 
-// DELETE /api/v1/systemNotifications/:notificationId
-export const deleteSystemNotification = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+// DELETE /api/v1/notifications/:notificationId
+export const deleteNotification = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { notificationId } = notificationIdQuerySchema.parse(req.params);
     await notificationsService.deleteNotification(notificationId);

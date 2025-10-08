@@ -8,7 +8,6 @@ import notificationRouter from './routes/notificationsRouter';
 import servicesRouter from './routes/servicesRouter';
 import { errorHandler } from '@ajgifford/keepwatching-common-server';
 import {
-  getEmailConfig,
   getLogDirectory,
   getPort,
   getRateLimitMax,
@@ -21,8 +20,7 @@ import {
 } from '@ajgifford/keepwatching-common-server/config';
 import { ErrorMessages, appLogger, cliLogger } from '@ajgifford/keepwatching-common-server/logger';
 import { responseInterceptor } from '@ajgifford/keepwatching-common-server/middleware';
-import { databaseService, initializeEmailService } from '@ajgifford/keepwatching-common-server/services';
-import { shutdownJobs } from '@ajgifford/keepwatching-common-server/services';
+import { databaseService, emailService, shutdownJobs } from '@ajgifford/keepwatching-common-server/services';
 import {
   GlobalErrorHandler,
   initializeFirebase,
@@ -93,9 +91,6 @@ const startServer = async () => {
         cliLogger.warn('Email service will be disabled due to configuration errors');
         process.env.EMAIL_ENABLED = 'false';
       } else {
-        const emailConfig = getEmailConfig();
-        const emailService = initializeEmailService(emailConfig);
-
         // Verify email connection on startup
         const isConnected = await emailService.verifyConnection();
         if (!isConnected) {

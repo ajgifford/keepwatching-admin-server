@@ -32,11 +32,15 @@ export const editAccount = asyncHandler(async (req: Request, res: Response, next
     const { accountId } = req.params as unknown as AccountIdParam;
     const { name, defaultProfileId }: UpdateAccountBody = req.body;
 
-    const updatedAccount = await accountService.editAccount(accountId, name, defaultProfileId);
+    const editedAccount = await accountService.editAccount(accountId, name, defaultProfileId);
+    if (editedAccount) {
+      const updatedAccount = await accountService.getCombinedAccountByEmail(editedAccount.email);
+      res.status(200).json({ message: `Updated account ${accountId}`, result: updatedAccount });
+      return;
+    }
 
     res.status(200).json({
-      message: `Updated account ${accountId}`,
-      result: updatedAccount,
+      message: `No updates made to account ${accountId}`,
     });
   } catch (error) {
     next(error);

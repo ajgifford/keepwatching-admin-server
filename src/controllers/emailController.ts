@@ -2,7 +2,6 @@ import { isEmailEnabled } from '@ajgifford/keepwatching-common-server/config';
 import { cliLogger } from '@ajgifford/keepwatching-common-server/logger';
 import { emailService } from '@ajgifford/keepwatching-common-server/services';
 import { generateDiscoveryEmailHTML, generateWeeklyDigestHTML } from '@ajgifford/keepwatching-common-server/utils';
-import { CreateEmailTemplate, EmailReference, UpdateEmailTemplate } from '@ajgifford/keepwatching-types';
 import { NextFunction, Request, Response } from 'express';
 import asyncHandler from 'express-async-handler';
 import { off } from 'process';

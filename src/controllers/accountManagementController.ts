@@ -4,7 +4,13 @@ import {
   ProfileNameBody,
   UpdateAccountBody,
 } from '@ajgifford/keepwatching-common-server/schema';
-import { accountService, profileService } from '@ajgifford/keepwatching-common-server/services';
+import {
+  accountService,
+  adminMovieService,
+  adminShowService,
+  profileService,
+  statisticsService,
+} from '@ajgifford/keepwatching-common-server/services';
 import { NextFunction, Request, Response } from 'express';
 import asyncHandler from 'express-async-handler';
 
@@ -114,6 +120,64 @@ export const deleteProfile = asyncHandler(async (req: Request, res: Response, ne
     await profileService.deleteProfile(profileId);
 
     res.status(204).json({ message: 'Profile deleted successfully' });
+  } catch (error) {
+    next(error);
+  }
+});
+
+export const getAccountStatistics = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { accountId } = req.params as unknown as AccountIdParam;
+    const accountStatistics = await statisticsService.getAccountStatistics(accountId);
+    res.json({ message: 'Retrieved account statistics', results: accountStatistics });
+  } catch (error) {
+    next(error);
+  }
+});
+
+export const getProfileStatistics = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { profileId } = req.params as unknown as AccountAndProfileIdsParams;
+    const profileStatistics = await statisticsService.getProfileStatistics(profileId);
+    res.json({ message: 'Retrieved profile statistics', results: profileStatistics });
+  } catch (error) {
+    next(error);
+  }
+});
+
+export const getProfileShowsList = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { profileId } = req.params as unknown as AccountAndProfileIdsParams;
+    const page = Math.max(1, parseInt(req.query.page as string) || 1);
+    const limit = Math.min(100, parseInt(req.query.limit as string) || 50);
+    const offset = (page - 1) * limit;
+
+    const allShowsResult = await adminShowService.getAllShowsByProfile(profileId, page, offset, limit);
+
+    res.status(200).json({
+      message: `Retrieved page ${page} of shows for profile ${profileId}`,
+      pagination: allShowsResult.pagination,
+      results: allShowsResult.shows,
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+export const getProfileMoviesList = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { profileId } = req.params as unknown as AccountAndProfileIdsParams;
+    const page = Math.max(1, parseInt(req.query.page as string) || 1);
+    const limit = Math.min(100, parseInt(req.query.limit as string) || 50);
+    const offset = (page - 1) * limit;
+
+    const allMovieResult = await adminMovieService.getAllMoviesByProfile(profileId, page, offset, limit);
+
+    res.status(200).json({
+      message: `Retrieved page ${page} of movies for profile ${profileId}`,
+      pagination: allMovieResult.pagination,
+      results: allMovieResult.movies,
+    });
   } catch (error) {
     next(error);
   }

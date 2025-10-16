@@ -3,7 +3,11 @@ import {
   deleteProfile,
   editAccount,
   editProfile,
+  getAccountStatistics,
   getAccounts,
+  getProfileMoviesList,
+  getProfileShowsList,
+  getProfileStatistics,
   getProfiles,
 } from '../controllers/accountManagementController';
 import { validateRequest, validateSchema } from '@ajgifford/keepwatching-common-server';
@@ -36,6 +40,26 @@ router.delete(
   '/api/v1/accounts/:accountId/profiles/:profileId',
   validateSchema(accountAndProfileIdsParamSchema, 'params'),
   deleteProfile,
+);
+router.get(
+  '/api/v1/accounts/:accountId/statistics',
+  validateSchema(accountIdParamSchema, 'params'),
+  getAccountStatistics,
+);
+router.get(
+  '/api/v1/accounts/:accountId/profiles/:profileId/statistics',
+  validateSchema(accountAndProfileIdsParamSchema, 'params'),
+  getProfileStatistics,
+);
+router.get(
+  '/api/v1/accounts/:accountId/profiles/:profileId/shows',
+  validateSchema(accountAndProfileIdsParamSchema, 'params'),
+  getProfileShowsList,
+);
+router.get(
+  '/api/v1/accounts/:accountId/profiles/:profileId/movies',
+  validateSchema(accountAndProfileIdsParamSchema, 'params'),
+  getProfileMoviesList,
 );
 
 export default router;

@@ -9,11 +9,13 @@ import {
   getProfileShowsList,
   getProfileStatistics,
   getProfiles,
+  verifyEmail,
 } from '../controllers/accountManagementController';
 import { validateRequest, validateSchema } from '@ajgifford/keepwatching-common-server';
 import {
   accountAndProfileIdsParamSchema,
   accountIdParamSchema,
+  accountUIDParamSchema,
   profileNameBodySchema,
   updateAccountBodySchema,
 } from '@ajgifford/keepwatching-common-server/schema';
@@ -61,5 +63,6 @@ router.get(
   validateSchema(accountAndProfileIdsParamSchema, 'params'),
   getProfileMoviesList,
 );
+router.post('/api/v1/accounts/:accountUid/verify-email', validateSchema(accountUIDParamSchema, 'params'), verifyEmail);
 
 export default router;

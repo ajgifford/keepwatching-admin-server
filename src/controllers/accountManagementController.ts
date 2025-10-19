@@ -1,6 +1,7 @@
 import {
   AccountAndProfileIdsParams,
   AccountIdParam,
+  AccountUIDParams,
   ProfileNameBody,
   UpdateAccountBody,
 } from '@ajgifford/keepwatching-common-server/schema';
@@ -177,6 +178,20 @@ export const getProfileMoviesList = asyncHandler(async (req: Request, res: Respo
       message: `Retrieved page ${page} of movies for profile ${profileId}`,
       pagination: allMovieResult.pagination,
       results: allMovieResult.movies,
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+export const verifyEmail = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { accountUid } = req.params as unknown as AccountUIDParams;
+
+    await accountService.verifyEmail(accountUid);
+
+    res.status(200).json({
+      message: `Email verified for account`,
     });
   } catch (error) {
     next(error);

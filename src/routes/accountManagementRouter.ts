@@ -3,6 +3,7 @@ import {
   deleteProfile,
   editAccount,
   editProfile,
+  getAccountPreferences,
   getAccountStatistics,
   getAccounts,
   getProfileMoviesList,
@@ -64,5 +65,10 @@ router.get(
   getProfileMoviesList,
 );
 router.post('/api/v1/accounts/:accountUid/verify-email', validateSchema(accountUIDParamSchema, 'params'), verifyEmail);
+router.get(
+  '/api/v1/accounts/:accountId/preferences',
+  validateSchema(accountIdParamSchema, 'params'),
+  getAccountPreferences,
+);
 
 export default router;

@@ -9,6 +9,7 @@ import {
   accountService,
   adminMovieService,
   adminShowService,
+  preferencesService,
   profileService,
   statisticsService,
 } from '@ajgifford/keepwatching-common-server/services';
@@ -193,6 +194,22 @@ export const verifyEmail = asyncHandler(async (req: Request, res: Response, next
     res.status(200).json({
       message: `Email verified for account`,
     });
+  } catch (error) {
+    next(error);
+  }
+});
+
+/**
+ * Retrieves all preferences for a specific account.
+ *
+ * @route GET /api/v1/accounts/:accountId/preferences
+ */
+export const getAccountPreferences = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { accountId } = req.params as unknown as AccountIdParam;
+
+    const preferences = await preferencesService.getAccountPreferences(accountId);
+    res.json({ message: 'Retrieved account preferences', preferences });
   } catch (error) {
     next(error);
   }

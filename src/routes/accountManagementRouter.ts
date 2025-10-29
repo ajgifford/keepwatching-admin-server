@@ -6,10 +6,15 @@ import {
   getAccountPreferences,
   getAccountStatistics,
   getAccounts,
+  getActivityTimeline,
+  getDailyActivity,
+  getMonthlyActivity,
   getProfileMoviesList,
   getProfileShowsList,
   getProfileStatistics,
   getProfiles,
+  getWatchingVelocity,
+  getWeeklyActivity,
   verifyEmail,
 } from '../controllers/accountManagementController';
 import { validateRequest, validateSchema } from '@ajgifford/keepwatching-common-server';
@@ -53,6 +58,31 @@ router.get(
   '/api/v1/accounts/:accountId/profiles/:profileId/statistics',
   validateSchema(accountAndProfileIdsParamSchema, 'params'),
   getProfileStatistics,
+);
+router.get(
+  '/api/v1/accounts/:accountId/profiles/:profileId/statistics/velocity',
+  validateSchema(accountAndProfileIdsParamSchema, 'params'),
+  getWatchingVelocity,
+);
+router.get(
+  '/api/v1/accounts/:accountId/profiles/:profileId/statistics/activity/daily',
+  validateSchema(accountAndProfileIdsParamSchema, 'params'),
+  getDailyActivity,
+);
+router.get(
+  '/api/v1/accounts/:accountId/profiles/:profileId/statistics/activity/weekly',
+  validateSchema(accountAndProfileIdsParamSchema, 'params'),
+  getWeeklyActivity,
+);
+router.get(
+  '/api/v1/accounts/:accountId/profiles/:profileId/statistics/activity/monthly',
+  validateSchema(accountAndProfileIdsParamSchema, 'params'),
+  getMonthlyActivity,
+);
+router.get(
+  '/api/v1/accounts/:accountId/profiles/:profileId/statistics/activity/timeline',
+  validateSchema(accountAndProfileIdsParamSchema, 'params'),
+  getActivityTimeline,
 );
 router.get(
   '/api/v1/accounts/:accountId/profiles/:profileId/shows',

@@ -147,6 +147,60 @@ export const getProfileStatistics = asyncHandler(async (req: Request, res: Respo
   }
 });
 
+export const getWatchingVelocity = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { profileId } = req.params as unknown as AccountAndProfileIdsParams;
+    const days = req.query.days ? parseInt(req.query.days as string, 10) : 30;
+    const results = await statisticsService.getWatchingVelocity(profileId, days);
+    res.json({ message: 'Retrieved watching velocity statistics', results });
+  } catch (error) {
+    next(error);
+  }
+});
+
+export const getDailyActivity = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { profileId } = req.params as unknown as AccountAndProfileIdsParams;
+    const days = req.query.days ? parseInt(req.query.days as string, 10) : 30;
+    const results = await statisticsService.getDailyActivity(profileId, days);
+    res.json({ message: 'Retrieved daily activity', results });
+  } catch (error) {
+    next(error);
+  }
+});
+
+export const getWeeklyActivity = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { profileId } = req.params as unknown as AccountAndProfileIdsParams;
+    const weeks = req.query.weeks ? parseInt(req.query.weeks as string, 10) : 12;
+    const results = await statisticsService.getWeeklyActivity(profileId, weeks);
+    res.json({ message: 'Retrieved weekly activity', results });
+  } catch (error) {
+    next(error);
+  }
+});
+
+export const getMonthlyActivity = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { profileId } = req.params as unknown as AccountAndProfileIdsParams;
+    const months = req.query.months ? parseInt(req.query.months as string, 10) : 12;
+    const results = await statisticsService.getMonthlyActivity(profileId, months);
+    res.json({ message: 'Retrieved monthly activity', results });
+  } catch (error) {
+    next(error);
+  }
+});
+
+export const getActivityTimeline = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { profileId } = req.params as unknown as AccountAndProfileIdsParams;
+    const results = await statisticsService.getActivityTimeline(profileId);
+    res.json({ message: 'Retrieved activity timeline', results });
+  } catch (error) {
+    next(error);
+  }
+});
+
 export const getProfileShowsList = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { profileId } = req.params as unknown as AccountAndProfileIdsParams;

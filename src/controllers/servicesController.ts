@@ -1,3 +1,4 @@
+import { healthService } from '@ajgifford/keepwatching-common-server/services';
 import { ServiceHealth, ServiceStatus } from '@ajgifford/keepwatching-types';
 import { exec } from 'child_process';
 import { NextFunction, Request, Response } from 'express';
@@ -7,6 +8,15 @@ export const getServicesHealth = asyncHandler(async (req: Request, res: Response
   try {
     const statuses = await checkServicesHealth();
     res.json(statuses);
+  } catch (error) {
+    next(error);
+  }
+});
+
+export const getDBHealth = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const dbHealth = await healthService.getDatabaseHealth();
+    res.json(dbHealth);
   } catch (error) {
     next(error);
   }

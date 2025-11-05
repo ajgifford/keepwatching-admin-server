@@ -6,6 +6,7 @@ import emailRouter from './routes/emailRouter';
 import logRouter from './routes/logRouter';
 import notificationRouter from './routes/notificationsRouter';
 import servicesRouter from './routes/servicesRouter';
+import statisticsRouter from './routes/statisticsRouter';
 import { errorHandler } from '@ajgifford/keepwatching-common-server';
 import {
   getLogDirectory,
@@ -74,6 +75,7 @@ app.use(emailRouter);
 app.use(logRouter);
 app.use(servicesRouter);
 app.use(notificationRouter);
+app.use(statisticsRouter);
 
 app.use(errorHandler);
 

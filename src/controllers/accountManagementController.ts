@@ -11,7 +11,6 @@ import {
   adminShowService,
   preferencesService,
   profileService,
-  statisticsService,
 } from '@ajgifford/keepwatching-common-server/services';
 import { NextFunction, Request, Response } from 'express';
 import asyncHandler from 'express-async-handler';
@@ -122,80 +121,6 @@ export const deleteProfile = asyncHandler(async (req: Request, res: Response, ne
     await profileService.deleteProfile(profileId);
 
     res.status(204).json({ message: 'Profile deleted successfully' });
-  } catch (error) {
-    next(error);
-  }
-});
-
-export const getAccountStatistics = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const { accountId } = req.params as unknown as AccountIdParam;
-    const accountStatistics = await statisticsService.getAccountStatistics(accountId);
-    res.json({ message: 'Retrieved account statistics', results: accountStatistics });
-  } catch (error) {
-    next(error);
-  }
-});
-
-export const getProfileStatistics = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const { profileId } = req.params as unknown as AccountAndProfileIdsParams;
-    const profileStatistics = await statisticsService.getProfileStatistics(profileId);
-    res.json({ message: 'Retrieved profile statistics', results: profileStatistics });
-  } catch (error) {
-    next(error);
-  }
-});
-
-export const getWatchingVelocity = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const { profileId } = req.params as unknown as AccountAndProfileIdsParams;
-    const days = req.query.days ? parseInt(req.query.days as string, 10) : 30;
-    const results = await statisticsService.getWatchingVelocity(profileId, days);
-    res.json({ message: 'Retrieved watching velocity statistics', results });
-  } catch (error) {
-    next(error);
-  }
-});
-
-export const getDailyActivity = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const { profileId } = req.params as unknown as AccountAndProfileIdsParams;
-    const days = req.query.days ? parseInt(req.query.days as string, 10) : 30;
-    const results = await statisticsService.getDailyActivity(profileId, days);
-    res.json({ message: 'Retrieved daily activity', results });
-  } catch (error) {
-    next(error);
-  }
-});
-
-export const getWeeklyActivity = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const { profileId } = req.params as unknown as AccountAndProfileIdsParams;
-    const weeks = req.query.weeks ? parseInt(req.query.weeks as string, 10) : 12;
-    const results = await statisticsService.getWeeklyActivity(profileId, weeks);
-    res.json({ message: 'Retrieved weekly activity', results });
-  } catch (error) {
-    next(error);
-  }
-});
-
-export const getMonthlyActivity = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const { profileId } = req.params as unknown as AccountAndProfileIdsParams;
-    const months = req.query.months ? parseInt(req.query.months as string, 10) : 12;
-    const results = await statisticsService.getMonthlyActivity(profileId, months);
-    res.json({ message: 'Retrieved monthly activity', results });
-  } catch (error) {
-    next(error);
-  }
-});
-
-export const getActivityTimeline = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const { profileId } = req.params as unknown as AccountAndProfileIdsParams;
-    const results = await statisticsService.getActivityTimeline(profileId);
-    res.json({ message: 'Retrieved activity timeline', results });
   } catch (error) {
     next(error);
   }

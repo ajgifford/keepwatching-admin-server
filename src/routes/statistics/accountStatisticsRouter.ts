@@ -11,6 +11,7 @@ import {
   getAccountUnairedContentStats,
   getAccountWatchStreakStats,
   getAccountWatchingVelocity,
+  getProfileComparison,
 } from '../../controllers/accountStatisticsController';
 import { validateSchema } from '@ajgifford/keepwatching-common-server';
 import { accountIdParamSchema } from '@ajgifford/keepwatching-common-server/schema';
@@ -88,6 +89,12 @@ router.get(
   '/api/v1/accounts/:accountId/statistics/unaired-content',
   validateSchema(accountIdParamSchema, 'params'),
   getAccountUnairedContentStats,
+);
+
+router.get(
+  '/api/v1/accounts/:accountId/statistics/profile-comparison',
+  validateSchema(accountIdParamSchema, 'params'),
+  getProfileComparison,
 );
 
 export default router;

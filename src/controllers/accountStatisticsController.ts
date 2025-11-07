@@ -229,3 +229,18 @@ export async function getAccountUnairedContentStats(req: Request, res: Response,
     next(error);
   }
 }
+
+/**
+ * Get profile comparison statistics for an account
+ *
+ * @route GET /api/v1/accounts/:accountId/statistics/profile-comparison
+ */
+export async function getProfileComparison(req: Request, res: Response, next: NextFunction) {
+  try {
+    const { accountId } = req.params as unknown as AccountIdParam;
+    const results = await accountStatisticsService.getProfileComparison(accountId);
+    res.status(200).json({ message: 'Successfully retrieved profile comparison', results });
+  } catch (error) {
+    next(error);
+  }
+}

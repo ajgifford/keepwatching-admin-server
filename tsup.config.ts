@@ -1,0 +1,33 @@
+import { defineConfig } from 'tsup';
+
+export default defineConfig({
+  entry: ['src/server.ts'],
+  format: ['esm'],
+  target: 'node18',
+  outDir: 'dist',
+  clean: true,
+  sourcemap: true,
+  bundle: true,
+  external: [
+    '@ajgifford/keepwatching-common-server',
+    '@ajgifford/keepwatching-types',
+    /^node:.*/,
+    'dotenv',
+    'body-parser',
+    'compression',
+    'cors',
+    'express',
+    'express-async-handler',
+    'express-rate-limit',
+    'firebase-admin',
+    'helmet',
+    'knex',
+    'morgan',
+    'mysql2',
+    'tail',
+    'uuid',
+    'winston',
+    'winston-daily-rotate-file',
+    'zod',
+  ],
+});

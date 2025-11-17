@@ -34,6 +34,7 @@ import cors from 'cors';
 import { EventEmitter } from 'events';
 import express from 'express';
 import rateLimit from 'express-rate-limit';
+import { readFileSync } from 'fs';
 import helmet from 'helmet';
 import { createServer } from 'http';
 
@@ -51,7 +52,7 @@ const SERVICE_NAME = getServiceName();
 const app = express();
 const httpServer = createServer(app);
 
-const serviceAccount: object = require(SERVICE_ACCOUNT_PATH);
+const serviceAccount: object = JSON.parse(readFileSync(SERVICE_ACCOUNT_PATH, 'utf-8'));
 initializeFirebase(serviceAccount, SERVICE_NAME);
 
 // Middleware

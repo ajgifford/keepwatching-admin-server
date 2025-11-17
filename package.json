@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "Server for the keepwatching-admin tool",
   "main": "dist/server.js",
+  "type": "module",
   "author": "Gifford Family Dev",
   "private": true,
   "dependencies": {

@@ -1,4 +1,5 @@
 import { getExpressLogDir, getPM2LogDir } from '@ajgifford/keepwatching-common-server/config';
+import { cliLogger } from '@ajgifford/keepwatching-common-server/logger';
 import {
   AppLogEntry,
   ErrorLogEntry,
@@ -217,7 +218,7 @@ export const streamLogs = asyncHandler(async (req: Request, res: Response, next:
           }
         }
       } catch (error) {
-        console.error(`Error setting up tail for ${service}:`, error);
+        cliLogger.error(`Error setting up tail for ${service}:`, error);
       }
     } else {
       unavailableLogs.push(service);
@@ -238,7 +239,7 @@ export const streamLogs = asyncHandler(async (req: Request, res: Response, next:
   });
 
   // Log summary of available/unavailable logs
-  console.log(`Streaming logs: Available: [${availableLogs.join(', ')}], Unavailable: [${unavailableLogs.join(', ')}]`);
+  cliLogger.info(`Streaming logs: Available: [${availableLogs.join(', ')}], Unavailable: [${unavailableLogs.join(', ')}]`);
 
   // Initial status message
   const statusEntry: LogEntry = {
@@ -257,7 +258,7 @@ export const streamLogs = asyncHandler(async (req: Request, res: Response, next:
       try {
         tail.unwatch();
       } catch (error) {
-        console.error('Error unwatching tail:', error);
+        cliLogger.error('Error unwatching tail:', error);
       }
     });
     Object.values(errorTimers).forEach((timer) => {
@@ -292,7 +293,7 @@ function findAllRotatingLogs(basePath: string): string[] {
 
     return rotatingLogs.map((file) => path.join(dir, file));
   } catch (err) {
-    console.error('Error finding rotating logs:', err);
+    cliLogger.error('Error finding rotating logs:', err);
     return [];
   }
 }
@@ -304,7 +305,7 @@ function findLatestRotatingLog(basePath: string): string | null {
 
 function loadLogs(logFile: string, service: LogService): LogEntry[] {
   if (!fileExists(logFile)) {
-    console.log('File does not exist', logFile);
+    cliLogger.info('File does not exist', logFile);
     return [];
   }
 
@@ -588,7 +589,7 @@ function parseLogTimestamp(dateTimeStr: string): string {
 
     return date.toISOString();
   } catch (error) {
-    console.warn(`Failed to parse timestamp "${dateTimeStr}":`, error);
+    cliLogger.warn(`Failed to parse timestamp "${dateTimeStr}":`, error);
     // Fallback to current timestamp
     return new Date().toISOString();
   }

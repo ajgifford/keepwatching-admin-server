@@ -64,7 +64,7 @@ export const deleteAccount = asyncHandler(async (req: Request, res: Response, ne
     const { accountId } = req.params as unknown as AccountIdParam;
 
     await accountService.deleteAccount(accountId);
-    res.json({ message: 'Account deleted successfully' });
+    res.status(200).json({ message: 'Account deleted successfully' });
   } catch (error) {
     next(error);
   }
@@ -80,7 +80,7 @@ export const getProfiles = asyncHandler(async (req: Request, res: Response, next
     const { accountId } = req.params as unknown as AccountIdParam;
 
     const profiles = await profileService.getAdminProfilesByAccount(accountId);
-    res.json({ message: 'Retrieved profiles', results: profiles });
+    res.status(200).json({ message: 'Retrieved profiles', results: profiles });
   } catch (error) {
     next(error);
   }
@@ -120,7 +120,7 @@ export const deleteProfile = asyncHandler(async (req: Request, res: Response, ne
 
     await profileService.deleteProfile(profileId);
 
-    res.status(204).json({ message: 'Profile deleted successfully' });
+    res.status(200).json({ message: 'Profile deleted successfully' });
   } catch (error) {
     next(error);
   }
@@ -188,7 +188,7 @@ export const getAccountPreferences = asyncHandler(async (req: Request, res: Resp
     const { accountId } = req.params as unknown as AccountIdParam;
 
     const preferences = await preferencesService.getAccountPreferences(accountId);
-    res.json({ message: 'Retrieved account preferences', preferences });
+    res.status(200).json({ message: 'Retrieved account preferences', preferences });
   } catch (error) {
     next(error);
   }

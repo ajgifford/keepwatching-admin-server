@@ -27,7 +27,6 @@ export default {
   testPathIgnorePatterns: ['/node_modules/', '/dist/'],
   transformIgnorePatterns: ['node_modules/(?!(@ajgifford|uuid)/)'],
   moduleNameMapper: {
-    '^vitest$': '<rootDir>/tests/mocks/vitest.ts',
     '^@controllers/(.*)$': '<rootDir>/src/controllers/$1',
     '^@middleware/(.*)$': '<rootDir>/src/middleware/$1',
     '^@routes/(.*)$': '<rootDir>/src/routes/$1',

@@ -1,6 +1,6 @@
-import { describe, expect, it, jest, beforeEach } from '@jest/globals';
 import { LogService } from '@ajgifford/keepwatching-types';
-import { LogFileService } from '../../../src/services/LogFileService';
+import { beforeEach, describe, expect, it, jest } from '@jest/globals';
+import { LogFileService } from '@services/LogFileService';
 import fs from 'fs';
 
 // Mock dependencies
@@ -16,7 +16,7 @@ jest.mock('@ajgifford/keepwatching-common-server/logger', () => ({
     warn: jest.fn(),
   },
 }));
-jest.mock('../../../src/utils/dateHelpers', () => ({
+jest.mock('@utils/dateHelpers', () => ({
   getCurrentDate: jest.fn(() => 'January-15-2025'),
 }));
 
@@ -67,7 +67,11 @@ describe('LogFileService', () => {
 
   describe('findRotatingLogs', () => {
     it('should find and sort rotating log files', () => {
-      const mockFiles = ['keepwatching-January-15-2025.log', 'keepwatching-January-14-2025.log', 'keepwatching-January-13-2025.log'];
+      const mockFiles = [
+        'keepwatching-January-15-2025.log',
+        'keepwatching-January-14-2025.log',
+        'keepwatching-January-13-2025.log',
+      ];
 
       mockFs.readdirSync = jest.fn(() => mockFiles as any);
       mockFs.statSync = jest.fn((filePath: any) => {
@@ -92,7 +96,7 @@ describe('LogFileService', () => {
       ];
 
       mockFs.readdirSync = jest.fn(() => mockFiles as any);
-      mockFs.statSync = jest.fn(() => ({ mtime: new Date() } as any));
+      mockFs.statSync = jest.fn(() => ({ mtime: new Date() }) as any);
 
       const result = service.findRotatingLogs('/var/log/keepwatching-January-15-2025.log');
 
@@ -118,7 +122,7 @@ describe('LogFileService', () => {
       ];
 
       mockFs.readdirSync = jest.fn(() => mockFiles as any);
-      mockFs.statSync = jest.fn(() => ({ mtime: new Date() } as any));
+      mockFs.statSync = jest.fn(() => ({ mtime: new Date() }) as any);
 
       const result = service.findRotatingLogs('/var/log/keepwatching-January-15-2025.log');
 
@@ -197,7 +201,7 @@ describe('LogFileService', () => {
     beforeEach(() => {
       // Setup default mocks for rotating log functionality
       mockFs.readdirSync = jest.fn(() => ['keepwatching-January-15-2025.log'] as any);
-      mockFs.statSync = jest.fn(() => ({ mtime: new Date() } as any));
+      mockFs.statSync = jest.fn(() => ({ mtime: new Date() }) as any);
     });
 
     it('should return default log file paths', () => {
@@ -232,7 +236,7 @@ describe('LogFileService', () => {
       ];
 
       mockFs.readdirSync = jest.fn(() => mockFiles as any);
-      mockFs.statSync = jest.fn(() => ({ mtime: new Date() } as any));
+      mockFs.statSync = jest.fn(() => ({ mtime: new Date() }) as any);
 
       const result = service.getLogFilePaths({
         startDate: '2025-01-13T00:00:00Z',
@@ -244,13 +248,10 @@ describe('LogFileService', () => {
     });
 
     it('should not include additional rotating logs without date filters', () => {
-      const mockFiles = [
-        'keepwatching-January-15-2025.log',
-        'keepwatching-January-14-2025.log',
-      ];
+      const mockFiles = ['keepwatching-January-15-2025.log', 'keepwatching-January-14-2025.log'];
 
       mockFs.readdirSync = jest.fn(() => mockFiles as any);
-      mockFs.statSync = jest.fn(() => ({ mtime: new Date() } as any));
+      mockFs.statSync = jest.fn(() => ({ mtime: new Date() }) as any);
 
       const result = service.getLogFilePaths();
 

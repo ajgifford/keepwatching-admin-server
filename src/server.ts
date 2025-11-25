@@ -23,6 +23,7 @@ import { ErrorMessages, appLogger, cliLogger } from '@ajgifford/keepwatching-com
 import { responseInterceptor } from '@ajgifford/keepwatching-common-server/middleware';
 import { databaseService, emailService, shutdownJobs } from '@ajgifford/keepwatching-common-server/services';
 import {
+  DbMonitor,
   GlobalErrorHandler,
   initializeFirebase,
   loadStreamingService,
@@ -102,6 +103,26 @@ const startServer = async () => {
       }
     } else {
       cliLogger.info('Email service is disabled via configuration');
+    }
+
+    // Initialize and log stats store information
+    const dbMonitor = DbMonitor.getInstance();
+    const initialStoreInfo = dbMonitor.getStoreInfo();
+    cliLogger.info(`Database query statistics store: ${initialStoreInfo.type}`);
+
+    // Wait for Redis connection if using Redis
+    if (initialStoreInfo.isRedis) {
+      cliLogger.info('Waiting for Redis connection...');
+      const connected = await dbMonitor.waitForConnection(5000);
+
+      // Get updated connection status after waiting
+      const storeInfo = dbMonitor.getStoreInfo();
+      cliLogger.info(`Redis connection status: ${storeInfo.status} (connected: ${storeInfo.connected})`);
+
+      if (!connected || !storeInfo.connected) {
+        cliLogger.warn('Redis is not connected. Stats will not be persisted until connection is established.');
+        cliLogger.warn('If using Memurai, check if it needs to be restarted (10-day uptime limit).');
+      }
     }
 
     httpServer.listen(PORT, () => {

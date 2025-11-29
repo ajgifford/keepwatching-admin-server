@@ -1,13 +1,6 @@
-import { getDBHealth, getServicesHealth } from '@controllers/servicesController';
-import { healthService } from '@ajgifford/keepwatching-common-server/services';
-import { beforeEach, describe, expect, it, jest } from '@jest/globals';
 import { ServiceStatus } from '@ajgifford/keepwatching-types';
-
-jest.mock('@ajgifford/keepwatching-common-server/services', () => ({
-  healthService: {
-    getDatabaseHealth: jest.fn(),
-  },
-}));
+import { getServicesHealth } from '@controllers/adminController';
+import { beforeEach, describe, expect, it, jest } from '@jest/globals';
 
 // Mock child_process exec to control service health check responses
 const mockExec = jest.fn();
@@ -17,7 +10,7 @@ jest.mock('child_process', () => ({
   },
 }));
 
-describe('ServicesController', () => {
+describe('AdminController', () => {
   let req: any, res: any, next: jest.Mock;
 
   beforeEach(() => {
@@ -137,42 +130,6 @@ describe('ServicesController', () => {
 
       const expressStatus = response.find((s: any) => s.name === 'express');
       expect(expressStatus?.status).toBe(ServiceStatus.STOPPED);
-    });
-  });
-
-  describe('getDBHealth', () => {
-    it('should return database health status', async () => {
-      const mockDbHealth = {
-        status: 'healthy',
-        connected: true,
-        responseTime: 10,
-      };
-
-      (healthService.getDatabaseHealth as jest.Mock).mockResolvedValue(mockDbHealth);
-
-      await getDBHealth(req, res, next);
-
-      expect(healthService.getDatabaseHealth).toHaveBeenCalled();
-      expect(res.json).toHaveBeenCalledWith(mockDbHealth);
-    });
-
-    it('should handle database health check errors', async () => {
-      const error = new Error('Database connection failed');
-      (healthService.getDatabaseHealth as jest.Mock).mockRejectedValue(error);
-
-      await getDBHealth(req, res, next);
-
-      expect(next).toHaveBeenCalledWith(error);
-    });
-
-    it('should handle database timeout errors', async () => {
-      const error = new Error('Connection timeout');
-      (healthService.getDatabaseHealth as jest.Mock).mockRejectedValue(error);
-
-      await getDBHealth(req, res, next);
-
-      expect(next).toHaveBeenCalledWith(error);
-      expect(res.json).not.toHaveBeenCalled();
     });
   });
 });

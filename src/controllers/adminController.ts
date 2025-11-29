@@ -1,4 +1,3 @@
-import { healthService } from '@ajgifford/keepwatching-common-server/services';
 import { ServiceHealth, ServiceStatus } from '@ajgifford/keepwatching-types';
 import { exec } from 'child_process';
 import { NextFunction, Request, Response } from 'express';
@@ -12,52 +11,6 @@ export const getServicesHealth = asyncHandler(async (req: Request, res: Response
   try {
     const statuses = await checkServicesHealth();
     res.status(200).json(statuses);
-  } catch (error) {
-    next(error);
-  }
-});
-
-/**
- * Get DB query health
- * @route GET /api/v1/services/db-health
- */
-export const getDBHealth = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const dbHealth = await healthService.getDatabaseHealth();
-    res.status(200).json(dbHealth);
-  } catch (error) {
-    next(error);
-  }
-});
-
-/**
- * Get the database query statistics
- * @route GET /api/v1/services/db/query-stats?limit=undefined
- */
-export const getDBQueryStats = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const limit = req.query.limit ? parseInt(req.query.limit as string, 10) : undefined;
-    const queryHistory = await healthService.getQueryStats(limit);
-    res.status(200).json(queryHistory);
-  } catch (error) {
-    next(error);
-  }
-});
-
-/**
- * Get the history of an individual DB query
- * @route GET /api/v1/services/db/query-history?queryName=<query>&limit=100
- */
-export const getDBQueryHistory = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const queryName = req.query.queryName as string;
-    if (!queryName) {
-      res.status(400).json({ error: 'queryName query parameter is required' });
-      return;
-    }
-    const limit = req.query.limit ? parseInt(req.query.limit as string, 10) : undefined;
-    const queryHistory = await healthService.getQueryHistory(queryName, limit);
-    res.status(200).json(queryHistory);
   } catch (error) {
     next(error);
   }

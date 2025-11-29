@@ -1,11 +1,13 @@
 import 'dotenv/config';
 
 import accountRouter from './routes/accountManagementRouter';
+import adminRouter from './routes/adminRouter';
 import contentRouter from './routes/contentRouter';
 import emailRouter from './routes/emailRouter';
+import healthRouter from './routes/healthRouter';
+import jobsRouter from './routes/jobsRouter';
 import logRouter from './routes/logRouter';
 import notificationRouter from './routes/notificationsRouter';
-import servicesRouter from './routes/servicesRouter';
 import statisticsRouter from './routes/statisticsRouter';
 import { errorHandler } from '@ajgifford/keepwatching-common-server';
 import {
@@ -21,7 +23,13 @@ import {
 } from '@ajgifford/keepwatching-common-server/config';
 import { ErrorMessages, appLogger, cliLogger } from '@ajgifford/keepwatching-common-server/logger';
 import { responseInterceptor } from '@ajgifford/keepwatching-common-server/middleware';
-import { databaseService, emailService, shutdownJobs } from '@ajgifford/keepwatching-common-server/services';
+import {
+  databaseService,
+  emailService,
+  initScheduledJobs,
+  redisPubSubService,
+  shutdownJobs,
+} from '@ajgifford/keepwatching-common-server/services';
 import {
   DbMonitor,
   GlobalErrorHandler,
@@ -64,6 +72,8 @@ app.use(bodyParser.json());
 app.use(responseInterceptor);
 app.use('/uploads', express.static(UPLOADS_DIRECTORY));
 
+app.use(errorHandler);
+
 // Rate limiting
 const limiter = rateLimit({
   windowMs: getRateLimitTimeWindow(),
@@ -72,14 +82,14 @@ const limiter = rateLimit({
 
 app.use('/api/', limiter);
 app.use(accountRouter);
+app.use(adminRouter);
 app.use(contentRouter);
 app.use(emailRouter);
+app.use(healthRouter);
+app.use(jobsRouter);
 app.use(logRouter);
-app.use(servicesRouter);
 app.use(notificationRouter);
 app.use(statisticsRouter);
-
-app.use(errorHandler);
 
 const startServer = async () => {
   try {
@@ -125,6 +135,16 @@ const startServer = async () => {
       }
     }
 
+    // Initialize Redis pub/sub for job notifications
+    cliLogger.info('Initializing Redis pub/sub service...');
+    await redisPubSubService.initialize();
+    cliLogger.info('Redis pub/sub service initialized');
+
+    // Initialize scheduled jobs (they will publish to Redis when complete)
+    cliLogger.info('Initializing scheduled jobs...');
+    initScheduledJobs();
+    cliLogger.info('Scheduled jobs initialized');
+
     httpServer.listen(PORT, () => {
       cliLogger.info(`Server is running on https://localhost:${PORT}`);
       cliLogger.info(`Serving uploads from: ${UPLOADS_DIRECTORY}`);
@@ -147,6 +167,12 @@ const gracefulShutdown = (signal: string) => {
     cliLogger.info('HTTP server closed');
 
     shutdownJobs();
+
+    try {
+      await redisPubSubService.disconnect();
+    } catch (err) {
+      cliLogger.error('Error during Redis pub/sub shutdown', err);
+    }
 
     try {
       await databaseService.shutdown();

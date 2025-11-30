@@ -7,7 +7,7 @@
   "author": "Gifford Family Dev",
   "private": true,
   "dependencies": {
-    "@ajgifford/keepwatching-common-server": "^0.10.0",
+    "@ajgifford/keepwatching-common-server": "^0.10.2",
     "@ajgifford/keepwatching-types": "^0.7.9",
     "body-parser": "^2.2.1",
     "compression": "^1.8.0",

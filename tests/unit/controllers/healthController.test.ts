@@ -8,6 +8,7 @@ import {
   getDBQueryStats,
   getHistoricalPerformanceTrends,
   getHistoricalSlowestQueries,
+  getMonthlyPerformanceSummary,
   getPerformanceOverview,
 } from '@controllers/healthController';
 
@@ -21,6 +22,7 @@ jest.mock('@ajgifford/keepwatching-common-server/services', () => ({
     getArchiveLogs: jest.fn(),
     getArchiveStatistics: jest.fn(),
     getPerformanceOverview: jest.fn(),
+    getMonthlyPerformanceSummary: jest.fn(),
     archiveDailyPerformanceNow: jest.fn(),
   },
 }));
@@ -467,6 +469,68 @@ describe('HealthController', () => {
       await getPerformanceOverview(req, res, next);
 
       expect(next).toHaveBeenCalledWith(error);
+    });
+  });
+
+  describe('getMonthlyPerformanceSummary', () => {
+    it('should return monthly performance summary', async () => {
+      const mockSummary = {
+        monthlyData: [
+          {
+            month: '2025-01',
+            totalQueries: 100000,
+            avgDuration: 95.5,
+            maxDuration: 1200,
+            minDuration: 5,
+            slowestQuery: 'SELECT_COMPLEX_JOIN',
+          },
+          {
+            month: '2024-12',
+            totalQueries: 95000,
+            avgDuration: 92.3,
+            maxDuration: 1100,
+            minDuration: 4,
+            slowestQuery: 'UPDATE_BATCH',
+          },
+        ],
+        overallStats: {
+          totalMonths: 12,
+          avgQueriesPerMonth: 98000,
+          avgDurationTrend: 'improving',
+        },
+      };
+
+      (healthService.getMonthlyPerformanceSummary as jest.Mock).mockResolvedValue(mockSummary);
+
+      await getMonthlyPerformanceSummary(req, res, next);
+
+      expect(healthService.getMonthlyPerformanceSummary).toHaveBeenCalled();
+      expect(res.status).toHaveBeenCalledWith(200);
+      expect(res.json).toHaveBeenCalledWith(mockSummary);
+    });
+
+    it('should handle errors', async () => {
+      const error = new Error('Failed to fetch monthly performance summary');
+      (healthService.getMonthlyPerformanceSummary as jest.Mock).mockRejectedValue(error);
+
+      await getMonthlyPerformanceSummary(req, res, next);
+
+      expect(next).toHaveBeenCalledWith(error);
+    });
+
+    it('should handle empty results', async () => {
+      const emptyResult = {
+        monthlyData: [],
+        overallStats: null,
+      };
+
+      (healthService.getMonthlyPerformanceSummary as jest.Mock).mockResolvedValue(emptyResult);
+
+      await getMonthlyPerformanceSummary(req, res, next);
+
+      expect(healthService.getMonthlyPerformanceSummary).toHaveBeenCalled();
+      expect(res.status).toHaveBeenCalledWith(200);
+      expect(res.json).toHaveBeenCalledWith(emptyResult);
     });
   });
 

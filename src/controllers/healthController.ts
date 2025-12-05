@@ -171,6 +171,19 @@ export const getPerformanceOverview = asyncHandler(async (req: Request, res: Res
 });
 
 /**
+ * Get monthly performance summary
+ * @route GET /api/v1/admin/health/db/monthly-performance
+ */
+export const getMonthlyPerformanceSummary = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const summary = await healthService.getMonthlyPerformanceSummary();
+    res.status(200).json(summary);
+  } catch (error) {
+    next(error);
+  }
+});
+
+/**
  * Get comprehensive performance overview
  * @route POST /api/v1/admin/health/db/archive-performance
  */

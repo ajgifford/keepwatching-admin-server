@@ -1,3 +1,4 @@
+import { getMonthlyPerformanceSummary } from '@controllers/healthController';
 import { describe, expect, it } from '@jest/globals';
 import router from '@routes/healthRouter';
 import express from 'express';
@@ -15,6 +16,7 @@ jest.mock('@controllers/healthController', () => ({
   ),
   getHistoricalSlowestQueries: jest.fn((_req, res) => res.status(200).send('retrieved historical slowest queries')),
   getPerformanceOverview: jest.fn((_req, res) => res.status(200).send('retrieved performance overview')),
+  getMonthlyPerformanceSummary: jest.fn((_req, res) => res.status(200).send('retrieved monthly performance summary')),
 }));
 
 const app = express();
@@ -68,6 +70,12 @@ describe('HealthRouter', () => {
     const res = await request(app).get('/api/v1/admin/health/db/performance-overview').send({});
     expect(res.status).toBe(200);
     expect(res.text).toBe('retrieved performance overview');
+  });
+
+  it('GET /api/v1/admin/health/db/monthly-performance', async () => {
+    const res = await request(app).get('/api/v1/admin/health/db/monthly-performance').send({});
+    expect(res.status).toBe(200);
+    expect(res.text).toBe('retrieved monthly performance summary');
   });
 
   it('POST /api/v1/admin/health/db/archive-performance', async () => {

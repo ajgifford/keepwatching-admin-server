@@ -7,8 +7,8 @@
   "author": "Gifford Family Dev",
   "private": true,
   "dependencies": {
-    "@ajgifford/keepwatching-common-server": "^0.10.2",
-    "@ajgifford/keepwatching-types": "^0.7.9",
+    "@ajgifford/keepwatching-common-server": "^0.10.3",
+    "@ajgifford/keepwatching-types": "^0.7.10",
     "body-parser": "^2.2.1",
     "compression": "^1.8.0",
     "cors": "^2.8.5",

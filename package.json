@@ -7,8 +7,8 @@
   "author": "Gifford Family Dev",
   "private": true,
   "dependencies": {
-    "@ajgifford/keepwatching-common-server": "^0.10.4",
-    "@ajgifford/keepwatching-types": "^0.7.10",
+    "@ajgifford/keepwatching-common-server": "^0.10.6",
+    "@ajgifford/keepwatching-types": "^0.7.11",
     "body-parser": "^2.2.1",
     "compression": "^1.8.0",
     "cors": "^2.8.5",
@@ -60,7 +60,8 @@
     "glob": "^11.1.0",
     "js-yaml": "^4.1.1",
     "jws": "^4.0.1",
-    "body-parser": "^2.2.1"
+    "body-parser": "^2.2.1",
+    "qs": "6.14.1"
   },
   "scripts": {
     "build": "tsup",

@@ -1,3 +1,4 @@
+import { summaryService } from '@ajgifford/keepwatching-common-server/services';
 import { ServiceHealth, ServiceStatus } from '@ajgifford/keepwatching-types';
 import { exec } from 'child_process';
 import { NextFunction, Request, Response } from 'express';
@@ -5,12 +6,28 @@ import asyncHandler from 'express-async-handler';
 
 /**
  * Get service health
- * @route GET /api/v1/services/health
+ * @route GET /api/v1/admin/health
  */
 export const getServicesHealth = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
   try {
     const statuses = await checkServicesHealth();
     res.status(200).json(statuses);
+  } catch (error) {
+    next(error);
+  }
+});
+
+/**
+ * Get summary counts such as total accounts, shows, movies
+ * @route GET /api/v1/admin/summary-counts
+ */
+export const getSummaryCounts = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const counts = await summaryService.getSummaryCounts();
+    res.status(200).json({
+      message: 'Successfully retrieved summary counts',
+      counts,
+    });
   } catch (error) {
     next(error);
   }

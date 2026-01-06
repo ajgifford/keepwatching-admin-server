@@ -4,7 +4,8 @@ import express from 'express';
 import request from 'supertest';
 
 jest.mock('@controllers/adminController', () => ({
-  getServicesHealth: jest.fn((_req, res) => res.status(200).send('retrieved services health')),
+  getServicesHealth: jest.fn((_req, res) => res.status(200).send('retrieved admin health')),
+  getAdminStats: jest.fn((_req, res) => res.status(200).send('retrieved admin stats')),
 }));
 
 const app = express();
@@ -15,6 +16,12 @@ describe('AdminRouter', () => {
   it('GET /api/v1/admin/health', async () => {
     const res = await request(app).get('/api/v1/admin/health').send({});
     expect(res.status).toBe(200);
-    expect(res.text).toBe('retrieved services health');
+    expect(res.text).toBe('retrieved admin health');
+  });
+
+  it('GET /api/v1/admin/stats', async () => {
+    const res = await request(app).get('/api/v1/admin/stats').send({});
+    expect(res.status).toBe(200);
+    expect(res.text).toBe('retrieved admin stats');
   });
 });

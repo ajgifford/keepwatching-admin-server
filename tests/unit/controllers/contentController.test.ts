@@ -24,6 +24,7 @@ import { beforeEach, describe, expect, it } from '@jest/globals';
 jest.mock('@ajgifford/keepwatching-common-server/services', () => ({
   adminMovieService: {
     getAllMovies: jest.fn(),
+    getAllMoviesFiltered: jest.fn(),
     getCompleteMovieInfo: jest.fn(),
     getMovieDetails: jest.fn(),
     getMovieProfiles: jest.fn(),
@@ -32,6 +33,7 @@ jest.mock('@ajgifford/keepwatching-common-server/services', () => ({
   },
   adminShowService: {
     getAllShows: jest.fn(),
+    getAllShowsFiltered: jest.fn(),
     getCompleteShowInfo: jest.fn(),
     getShowDetails: jest.fn(),
     getShowSeasons: jest.fn(),
@@ -73,13 +75,13 @@ describe('ContentController', () => {
         pagination: { page: 1, limit: 50, total: 100, totalPages: 2 },
       };
 
-      (adminMovieService.getAllMovies as jest.Mock).mockResolvedValue(mockMoviesResult);
+      (adminMovieService.getAllMoviesFiltered as jest.Mock).mockResolvedValue(mockMoviesResult);
 
       req.query = { page: '1', limit: '50' };
 
       await getMovies(req, res, next);
 
-      expect(adminMovieService.getAllMovies).toHaveBeenCalledWith(1, 0, 50);
+      expect(adminMovieService.getAllMoviesFiltered).toHaveBeenCalledWith({}, 1, 0, 50);
       expect(res.status).toHaveBeenCalledWith(200);
       expect(res.json).toHaveBeenCalledWith({
         message: 'Retrieved page 1 of movies',
@@ -94,13 +96,13 @@ describe('ContentController', () => {
         pagination: { page: 1, limit: 50, total: 0, totalPages: 0 },
       };
 
-      (adminMovieService.getAllMovies as jest.Mock).mockResolvedValue(mockMoviesResult);
+      (adminMovieService.getAllMoviesFiltered as jest.Mock).mockResolvedValue(mockMoviesResult);
 
       req.query = {};
 
       await getMovies(req, res, next);
 
-      expect(adminMovieService.getAllMovies).toHaveBeenCalledWith(1, 0, 50);
+      expect(adminMovieService.getAllMoviesFiltered).toHaveBeenCalledWith({}, 1, 0, 50);
     });
 
     it('should handle page 0 by defaulting to page 1', async () => {
@@ -109,13 +111,13 @@ describe('ContentController', () => {
         pagination: { page: 1, limit: 50, total: 0, totalPages: 0 },
       };
 
-      (adminMovieService.getAllMovies as jest.Mock).mockResolvedValue(mockMoviesResult);
+      (adminMovieService.getAllMoviesFiltered as jest.Mock).mockResolvedValue(mockMoviesResult);
 
       req.query = { page: '0' };
 
       await getMovies(req, res, next);
 
-      expect(adminMovieService.getAllMovies).toHaveBeenCalledWith(1, 0, 50);
+      expect(adminMovieService.getAllMoviesFiltered).toHaveBeenCalledWith({}, 1, 0, 50);
     });
 
     it('should handle negative page by defaulting to page 1', async () => {
@@ -124,13 +126,13 @@ describe('ContentController', () => {
         pagination: { page: 1, limit: 50, total: 0, totalPages: 0 },
       };
 
-      (adminMovieService.getAllMovies as jest.Mock).mockResolvedValue(mockMoviesResult);
+      (adminMovieService.getAllMoviesFiltered as jest.Mock).mockResolvedValue(mockMoviesResult);
 
       req.query = { page: '-5' };
 
       await getMovies(req, res, next);
 
-      expect(adminMovieService.getAllMovies).toHaveBeenCalledWith(1, 0, 50);
+      expect(adminMovieService.getAllMoviesFiltered).toHaveBeenCalledWith({}, 1, 0, 50);
     });
 
     it('should cap limit at 100', async () => {
@@ -139,13 +141,13 @@ describe('ContentController', () => {
         pagination: { page: 1, limit: 100, total: 0, totalPages: 0 },
       };
 
-      (adminMovieService.getAllMovies as jest.Mock).mockResolvedValue(mockMoviesResult);
+      (adminMovieService.getAllMoviesFiltered as jest.Mock).mockResolvedValue(mockMoviesResult);
 
       req.query = { limit: '200' };
 
       await getMovies(req, res, next);
 
-      expect(adminMovieService.getAllMovies).toHaveBeenCalledWith(1, 0, 100);
+      expect(adminMovieService.getAllMoviesFiltered).toHaveBeenCalledWith({}, 1, 0, 100);
     });
 
     it('should handle invalid page string as page 1', async () => {
@@ -154,13 +156,13 @@ describe('ContentController', () => {
         pagination: { page: 1, limit: 50, total: 0, totalPages: 0 },
       };
 
-      (adminMovieService.getAllMovies as jest.Mock).mockResolvedValue(mockMoviesResult);
+      (adminMovieService.getAllMoviesFiltered as jest.Mock).mockResolvedValue(mockMoviesResult);
 
       req.query = { page: 'invalid' };
 
       await getMovies(req, res, next);
 
-      expect(adminMovieService.getAllMovies).toHaveBeenCalledWith(1, 0, 50);
+      expect(adminMovieService.getAllMoviesFiltered).toHaveBeenCalledWith({}, 1, 0, 50);
     });
 
     it('should handle invalid limit string as default 50', async () => {
@@ -169,13 +171,13 @@ describe('ContentController', () => {
         pagination: { page: 1, limit: 50, total: 0, totalPages: 0 },
       };
 
-      (adminMovieService.getAllMovies as jest.Mock).mockResolvedValue(mockMoviesResult);
+      (adminMovieService.getAllMoviesFiltered as jest.Mock).mockResolvedValue(mockMoviesResult);
 
       req.query = { limit: 'invalid' };
 
       await getMovies(req, res, next);
 
-      expect(adminMovieService.getAllMovies).toHaveBeenCalledWith(1, 0, 50);
+      expect(adminMovieService.getAllMoviesFiltered).toHaveBeenCalledWith({}, 1, 0, 50);
     });
 
     it('should calculate correct offset for page 3', async () => {
@@ -184,18 +186,18 @@ describe('ContentController', () => {
         pagination: { page: 3, limit: 25, total: 100, totalPages: 4 },
       };
 
-      (adminMovieService.getAllMovies as jest.Mock).mockResolvedValue(mockMoviesResult);
+      (adminMovieService.getAllMoviesFiltered as jest.Mock).mockResolvedValue(mockMoviesResult);
 
       req.query = { page: '3', limit: '25' };
 
       await getMovies(req, res, next);
 
-      expect(adminMovieService.getAllMovies).toHaveBeenCalledWith(3, 50, 25);
+      expect(adminMovieService.getAllMoviesFiltered).toHaveBeenCalledWith({}, 3, 50, 25);
     });
 
     it('should call next with error when service throws', async () => {
       const error = new Error('Database connection failed');
-      (adminMovieService.getAllMovies as jest.Mock).mockRejectedValue(error);
+      (adminMovieService.getAllMoviesFiltered as jest.Mock).mockRejectedValue(error);
 
       req.query = { page: '1', limit: '50' };
 
@@ -213,13 +215,13 @@ describe('ContentController', () => {
         pagination: { page: 1, limit: 50, total: 100, totalPages: 2 },
       };
 
-      (adminShowService.getAllShows as jest.Mock).mockResolvedValue(mockShowsResult);
+      (adminShowService.getAllShowsFiltered as jest.Mock).mockResolvedValue(mockShowsResult);
 
       req.query = { page: '1', limit: '50' };
 
       await getShows(req, res, next);
 
-      expect(adminShowService.getAllShows).toHaveBeenCalledWith(1, 0, 50);
+      expect(adminShowService.getAllShowsFiltered).toHaveBeenCalledWith({}, 1, 0, 50);
       expect(res.status).toHaveBeenCalledWith(200);
     });
 
@@ -229,13 +231,13 @@ describe('ContentController', () => {
         pagination: { page: 1, limit: 50, total: 0, totalPages: 0 },
       };
 
-      (adminShowService.getAllShows as jest.Mock).mockResolvedValue(mockShowsResult);
+      (adminShowService.getAllShowsFiltered as jest.Mock).mockResolvedValue(mockShowsResult);
 
       req.query = {};
 
       await getShows(req, res, next);
 
-      expect(adminShowService.getAllShows).toHaveBeenCalledWith(1, 0, 50);
+      expect(adminShowService.getAllShowsFiltered).toHaveBeenCalledWith({}, 1, 0, 50);
     });
 
     it('should cap limit at 100', async () => {
@@ -244,18 +246,18 @@ describe('ContentController', () => {
         pagination: { page: 1, limit: 100, total: 0, totalPages: 0 },
       };
 
-      (adminShowService.getAllShows as jest.Mock).mockResolvedValue(mockShowsResult);
+      (adminShowService.getAllShowsFiltered as jest.Mock).mockResolvedValue(mockShowsResult);
 
       req.query = { limit: '500' };
 
       await getShows(req, res, next);
 
-      expect(adminShowService.getAllShows).toHaveBeenCalledWith(1, 0, 100);
+      expect(adminShowService.getAllShowsFiltered).toHaveBeenCalledWith({}, 1, 0, 100);
     });
 
     it('should call next with error when service throws', async () => {
       const error = new Error('Service error');
-      (adminShowService.getAllShows as jest.Mock).mockRejectedValue(error);
+      (adminShowService.getAllShowsFiltered as jest.Mock).mockRejectedValue(error);
 
       req.query = { page: '1', limit: '50' };
 

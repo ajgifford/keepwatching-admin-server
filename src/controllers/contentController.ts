@@ -9,11 +9,16 @@ export const getMovies = asyncHandler(async (req: Request, res: Response, next: 
     const limit = Math.min(100, parseInt(req.query.limit as string) || 50);
     const offset = (page - 1) * limit;
 
-    const allMoviesResult = await adminMovieService.getAllMovies(page, offset, limit);
+    const filters: { streamingService?: string; year?: string } = {};
+    if (req.query.streamingService) filters.streamingService = req.query.streamingService as string;
+    if (req.query.year) filters.year = req.query.year as string;
+
+    const allMoviesResult = await adminMovieService.getAllMoviesFiltered(filters, page, offset, limit);
 
     res.status(200).json({
       message: `Retrieved page ${page} of movies`,
       pagination: allMoviesResult.pagination,
+      filters: allMoviesResult.filters,
       results: allMoviesResult.movies,
     });
   } catch (error) {
@@ -28,11 +33,18 @@ export const getShows = asyncHandler(async (req: Request, res: Response, next: N
     const limit = Math.min(100, parseInt(req.query.limit as string) || 50);
     const offset = (page - 1) * limit;
 
-    const allShowsResult = await adminShowService.getAllShows(page, offset, limit);
+    const filters: { type?: string; status?: string; network?: string; streamingService?: string } = {};
+    if (req.query.type) filters.type = req.query.type as string;
+    if (req.query.status) filters.status = req.query.status as string;
+    if (req.query.network) filters.network = req.query.network as string;
+    if (req.query.streamingService) filters.streamingService = req.query.streamingService as string;
+
+    const allShowsResult = await adminShowService.getAllShowsFiltered(filters, page, offset, limit);
 
     res.status(200).json({
       message: `Retrieved page ${page} of shows`,
       pagination: allShowsResult.pagination,
+      filters: allShowsResult.filters,
       results: allShowsResult.shows,
     });
   } catch (error) {

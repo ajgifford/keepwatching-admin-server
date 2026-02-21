@@ -1,8 +1,11 @@
 import { summaryService } from '@ajgifford/keepwatching-common-server/services';
-import { ServiceHealth, ServiceStatus } from '@ajgifford/keepwatching-types';
+import { ServiceHealth, ServiceStatus, SiteStatus } from '@ajgifford/keepwatching-types';
 import { exec } from 'child_process';
 import { NextFunction, Request, Response } from 'express';
 import asyncHandler from 'express-async-handler';
+
+const ALLOWED_SERVICES = ['nginx', 'pm2'] as const;
+type RestartableService = (typeof ALLOWED_SERVICES)[number];
 
 /**
  * Get service health
@@ -28,6 +31,77 @@ export const getSummaryCounts = asyncHandler(async (req: Request, res: Response,
       message: 'Successfully retrieved summary counts',
       counts,
     });
+  } catch (error) {
+    next(error);
+  }
+});
+
+/**
+ * Probe the public-facing site URL to verify end-to-end reachability.
+ * @route GET /api/v1/admin/site-status
+ */
+export const getSiteStatus = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const url = process.env.SITE_URL ?? 'https://keepwatching.giffordfamilydev.us';
+    const lastChecked = new Date().toISOString();
+    const start = Date.now();
+
+    try {
+      const response = await fetch(url, { signal: AbortSignal.timeout(5000) });
+      const responseTimeMs = Date.now() - start;
+      const siteStatus: SiteStatus = {
+        url,
+        status: response.ok ? 'up' : 'down',
+        statusCode: response.status,
+        responseTimeMs,
+        lastChecked,
+      };
+      res.status(200).json(siteStatus);
+    } catch (fetchError) {
+      const responseTimeMs = Date.now() - start;
+      const siteStatus: SiteStatus = {
+        url,
+        status: 'down',
+        statusCode: null,
+        responseTimeMs,
+        lastChecked,
+        error: fetchError instanceof Error ? fetchError.message : 'Unknown error',
+      };
+      res.status(200).json(siteStatus);
+    }
+  } catch (error) {
+    next(error);
+  }
+});
+
+/**
+ * Restart a named service (nginx or pm2).
+ * Note: restarting nginx requires a passwordless sudoers entry for this process user:
+ *   <user> ALL=(ALL) NOPASSWD: /usr/bin/systemctl reload nginx
+ * @route POST /api/v1/admin/services/:service/restart
+ */
+export const restartService = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { service } = req.params;
+
+    if (!ALLOWED_SERVICES.includes(service as RestartableService)) {
+      res.status(400).json({ message: `Invalid service. Must be one of: ${ALLOWED_SERVICES.join(', ')}` });
+      return;
+    }
+
+    const cmd = service === 'nginx' ? 'sudo systemctl reload nginx' : 'pm2 reload keepwatching-api-server';
+
+    await new Promise<void>((resolve, reject) => {
+      exec(cmd, (error, _stdout, stderr) => {
+        if (error) {
+          reject(new Error(stderr || error.message));
+        } else {
+          resolve();
+        }
+      });
+    });
+
+    res.status(200).json({ success: true, service, message: `${service} reloaded successfully` });
   } catch (error) {
     next(error);
   }

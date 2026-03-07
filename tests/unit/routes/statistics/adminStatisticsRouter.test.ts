@@ -13,6 +13,7 @@ jest.mock('@controllers/adminStatisticsController', () => ({
   getTrendingContent: jest.fn((_req, res) => res.status(200).send('retrieved trending content')),
   getContentEngagement: jest.fn((_req, res) => res.status(200).send('retrieved content engagement')),
   getAdminDashboard: jest.fn((_req, res) => res.status(200).send('retrieved admin dashboard')),
+  backfillAchievements: jest.fn((_req, res) => res.status(200).send('backfill complete')),
 }));
 
 const app = express();
@@ -72,5 +73,11 @@ describe('AdminStatisticsRouter', () => {
     const res = await request(app).get('/api/v1/admin/statistics/dashboard').send({});
     expect(res.status).toBe(200);
     expect(res.text).toBe('retrieved admin dashboard');
+  });
+
+  it('POST /api/v1/admin/statistics/achievements/backfill', async () => {
+    const res = await request(app).post('/api/v1/admin/statistics/achievements/backfill').send({});
+    expect(res.status).toBe(200);
+    expect(res.text).toBe('backfill complete');
   });
 });

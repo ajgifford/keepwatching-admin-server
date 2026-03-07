@@ -2,12 +2,12 @@
 # yarn lockfile v1
 
 
-"@ajgifford/keepwatching-common-server@^0.10.7":
-  version "0.10.7"
-  resolved "https://npm.pkg.github.com/download/@ajgifford/keepwatching-common-server/0.10.7/759f4f2e340f390529c61c32b6eb04983f9c7ada#759f4f2e340f390529c61c32b6eb04983f9c7ada"
-  integrity sha512-sdarV7GMc35yoj4MWYj10hzQZOJYOGoNS+XK+ZXayfqPJc3mHrkwvd6X9WCQ9imJojG5QaXKqOim8A1QNpfWWg==
+"@ajgifford/keepwatching-common-server@^0.11.2":
+  version "0.11.2"
+  resolved "https://npm.pkg.github.com/download/@ajgifford/keepwatching-common-server/0.11.2/3af2505c10dd35ad3a0ee08ec2c20c8c5252182e#3af2505c10dd35ad3a0ee08ec2c20c8c5252182e"
+  integrity sha512-6WbVn0on55ALOldxoUf03tjP2h7w67ZLNlz+jRYVluR4OFlsXjmcsxwDyMrSiUTD7cqblxYND1hE2S8w7b0gbg==
   dependencies:
-    "@ajgifford/keepwatching-types" "^0.7.12"
+    "@ajgifford/keepwatching-types" "^0.7.15"
     axios "1.13.2"
     axios-retry "^4.5.0"
     cron-parser "5.4.0"
@@ -27,15 +27,10 @@
     winston-daily-rotate-file "^5.0.0"
     zod "^3.25.76"
 
-"@ajgifford/keepwatching-types@^0.7.12":
-  version "0.7.12"
-  resolved "https://npm.pkg.github.com/download/@ajgifford/keepwatching-types/0.7.12/fa57f2939f372450307cdab2d37f4d7ad0e0d36a#fa57f2939f372450307cdab2d37f4d7ad0e0d36a"
-  integrity sha512-k9SzHmft2Gh1v6E2VLkYV+kPoUHrmyBsK4ON3X8TNvsSzJzZJ7CgJlWgbmKV3t5xcNEE1PBeAf6fCO7q9v9Bsw==
-
-"@ajgifford/keepwatching-types@^0.7.13":
-  version "0.7.13"
-  resolved "https://npm.pkg.github.com/download/@ajgifford/keepwatching-types/0.7.13/8ecea9abf1d6f3eeb8affa07f58e9a4bcda5e1cc#8ecea9abf1d6f3eeb8affa07f58e9a4bcda5e1cc"
-  integrity sha512-WvcXxnBLxwqXaR9YC+ykeoa89dyWLjX+9QUl7AUT1B/0Rq2Y5xRVseUgD/yCg1Ly8DhrYpJMe7vWsrEE6/Fh0g==
+"@ajgifford/keepwatching-types@^0.7.15":
+  version "0.7.15"
+  resolved "https://npm.pkg.github.com/download/@ajgifford/keepwatching-types/0.7.15/5ee6699f54848e7735ca2d21278549c21a07d8c1#5ee6699f54848e7735ca2d21278549c21a07d8c1"
+  integrity sha512-2QQ3r0cH6nNKUz4DvA5b1s2VcaSDLchV2Zg5qLJHUUG/2KKe4rfF+LGC8DimRj0eVEuiRw5zlbtZZ5oLvn3iTw==
 
 "@babel/code-frame@^7.0.0", "@babel/code-frame@^7.27.1":
   version "7.27.1"

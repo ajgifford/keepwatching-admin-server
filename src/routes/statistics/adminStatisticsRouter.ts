@@ -1,4 +1,5 @@
 import {
+  backfillAchievements,
   getAccountHealth,
   getAccountHealthMetrics,
   getAccountRankings,
@@ -22,5 +23,6 @@ router.get('/api/v1/admin/statistics/content/popular', getContentPopularity);
 router.get('/api/v1/admin/statistics/content/trending', getTrendingContent);
 router.get('/api/v1/admin/statistics/content/:contentId/engagement', getContentEngagement);
 router.get('/api/v1/admin/statistics/dashboard', getAdminDashboard);
+router.post('/api/v1/admin/statistics/achievements/backfill', backfillAchievements);
 
 export default router;

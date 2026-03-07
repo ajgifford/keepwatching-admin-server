@@ -155,3 +155,21 @@ export async function getAdminDashboard(req: Request, res: Response, next: NextF
     next(error);
   }
 }
+
+/**
+ * Backfill achievements for all profiles
+ * Detects and records milestones that existing profiles have already passed
+ * but don't yet have achievement records for (e.g. after adding new thresholds)
+ * @route POST /api/v1/admin/statistics/achievements/backfill
+ */
+export async function backfillAchievements(req: Request, res: Response, next: NextFunction) {
+  try {
+    const results = await adminStatisticsService.backfillAchievements();
+    res.status(200).json({
+      message: `Backfill complete: ${results.totalNewAchievements} new achievements recorded across ${results.profilesProcessed} profiles`,
+      results,
+    });
+  } catch (error) {
+    next(error);
+  }
+}

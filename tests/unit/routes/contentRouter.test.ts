@@ -5,12 +5,15 @@ import request from 'supertest';
 
 jest.mock('@controllers/contentController', () => ({
   getShows: jest.fn((_req, res) => res.status(200).send('retrieved shows')),
+  getShowsWithDuplicates: jest.fn((_req, res) => res.status(200).send('retrieved shows with duplicates')),
   getFullShowDetails: jest.fn((_req, res) => res.status(200).send('retrieved show details')),
   getShowDetails: jest.fn((_req, res) => res.status(200).send('retrieved show info')),
   getShowSeasons: jest.fn((_req, res) => res.status(200).send('retrieved show seasons')),
   getShowSeasonsAndEpisodes: jest.fn((_req, res) => res.status(200).send('retrieved seasons and episodes')),
   getShowProfiles: jest.fn((_req, res) => res.status(200).send('retrieved show profiles')),
   getShowWatchProgress: jest.fn((_req, res) => res.status(200).send('retrieved watch progress')),
+  getDuplicateEpisodes: jest.fn((_req, res) => res.status(200).send('retrieved duplicate episodes')),
+  deleteEpisode: jest.fn((_req, res) => res.status(200).send('episode deleted')),
   updateShow: jest.fn((_req, res) => res.status(200).send('show updated')),
   updateAllShows: jest.fn((_req, res) => res.status(200).send('all shows updated')),
   getMovies: jest.fn((_req, res) => res.status(200).send('retrieved movies')),
@@ -70,6 +73,24 @@ describe('ContentRouter', () => {
       const res = await request(app).get('/api/v1/shows/123/watchProgress').send({});
       expect(res.status).toBe(200);
       expect(res.text).toBe('retrieved watch progress');
+    });
+
+    it('GET /api/v1/shows/duplicates routes to getShowsWithDuplicates not getFullShowDetails', async () => {
+      const res = await request(app).get('/api/v1/shows/duplicates').send({});
+      expect(res.status).toBe(200);
+      expect(res.text).toBe('retrieved shows with duplicates');
+    });
+
+    it('GET /api/v1/shows/:showId/duplicateEpisodes', async () => {
+      const res = await request(app).get('/api/v1/shows/123/duplicateEpisodes').send({});
+      expect(res.status).toBe(200);
+      expect(res.text).toBe('retrieved duplicate episodes');
+    });
+
+    it('DELETE /api/v1/shows/:showId/episodes/:episodeId', async () => {
+      const res = await request(app).delete('/api/v1/shows/123/episodes/456').send({});
+      expect(res.status).toBe(200);
+      expect(res.text).toBe('episode deleted');
     });
 
     it('POST /api/v1/shows/update', async () => {

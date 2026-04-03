@@ -1,4 +1,6 @@
 import {
+  deleteEpisode,
+  getDuplicateEpisodes,
   getFullMovieDetails,
   getFullShowDetails,
   getMovieDetails,
@@ -10,6 +12,7 @@ import {
   getShowProfiles,
   getShowSeasons,
   getShowSeasonsAndEpisodes,
+  getShowsWithDuplicates,
   getShowWatchProgress,
   getShows,
   updateAllMovies,
@@ -23,12 +26,15 @@ import express from 'express';
 const router = express.Router();
 
 router.get('/api/v1/shows', getShows);
+router.get('/api/v1/shows/duplicates', getShowsWithDuplicates);
 router.get('/api/v1/shows/:showId', getFullShowDetails);
 router.get('/api/v1/shows/:showId/details', getShowDetails);
 router.get('/api/v1/shows/:showId/seasons', getShowSeasons);
 router.get('/api/v1/shows/:showId/seasonsEpisodes', getShowSeasonsAndEpisodes);
 router.get('/api/v1/shows/:showId/profiles', getShowProfiles);
 router.get('/api/v1/shows/:showId/watchProgress', getShowWatchProgress);
+router.get('/api/v1/shows/:showId/duplicateEpisodes', getDuplicateEpisodes);
+router.delete('/api/v1/shows/:showId/episodes/:episodeId', deleteEpisode);
 router.post('/api/v1/shows/update', updateShow);
 router.post('/api/v1/shows/updateAll', updateAllShows);
 router.get('/api/v1/movies', getMovies);

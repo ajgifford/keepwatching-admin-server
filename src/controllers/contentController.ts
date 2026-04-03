@@ -124,6 +124,38 @@ export const getShowWatchProgress = asyncHandler(async (req: Request, res: Respo
   }
 });
 
+// GET /api/v1/shows/duplicates
+export const getShowsWithDuplicates = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const shows = await adminShowService.getShowsWithDuplicates();
+    res.status(200).json({ message: 'Retrieved shows with duplicate episodes', results: shows });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// GET /api/v1/shows/:showId/duplicateEpisodes
+export const getDuplicateEpisodes = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { showId } = req.params;
+    const episodes = await adminShowService.getDuplicateEpisodes(Number(showId));
+    res.status(200).json({ message: 'Retrieved duplicate episodes for show', results: episodes });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// DELETE /api/v1/shows/:showId/episodes/:episodeId
+export const deleteEpisode = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { showId, episodeId } = req.params;
+    await adminShowService.deleteEpisode(Number(episodeId), Number(showId));
+    res.status(200).json({ message: `Episode ${episodeId} deleted successfully` });
+  } catch (error) {
+    next(error);
+  }
+});
+
 // POST /api/v1/shows/update
 export const updateShow = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
   try {

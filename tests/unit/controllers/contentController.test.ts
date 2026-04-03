@@ -1,5 +1,7 @@
 import { adminMovieService, adminShowService, personService } from '@ajgifford/keepwatching-common-server/services';
 import {
+  deleteEpisode,
+  getDuplicateEpisodes,
   getFullMovieDetails,
   getFullShowDetails,
   getMovieDetails,
@@ -11,6 +13,7 @@ import {
   getShowProfiles,
   getShowSeasons,
   getShowSeasonsAndEpisodes,
+  getShowsWithDuplicates,
   getShowWatchProgress,
   getShows,
   updateAllMovies,
@@ -40,6 +43,9 @@ jest.mock('@ajgifford/keepwatching-common-server/services', () => ({
     getShowSeasonsWithEpisodes: jest.fn(),
     getShowProfiles: jest.fn(),
     getShowWatchProgress: jest.fn(),
+    getShowsWithDuplicates: jest.fn(),
+    getDuplicateEpisodes: jest.fn(),
+    deleteEpisode: jest.fn(),
     updateShowById: jest.fn(),
     updateAllShows: jest.fn(),
   },
@@ -783,6 +789,133 @@ describe('ContentController', () => {
       await updatePerson(req, res, next);
 
       expect(personService.updatePerson).toHaveBeenCalledWith(456, 789);
+    });
+  });
+
+  describe('getShowsWithDuplicates', () => {
+    it('should return all shows that have duplicate episodes', async () => {
+      const mockShows = [
+        { id: 1, title: 'Show A', posterImage: '/a.jpg', duplicateGroupCount: 2, extraEpisodeCount: 2 },
+        { id: 2, title: 'Show B', posterImage: '/b.jpg', duplicateGroupCount: 1, extraEpisodeCount: 1 },
+      ];
+      (adminShowService.getShowsWithDuplicates as jest.Mock).mockResolvedValue(mockShows);
+
+      await getShowsWithDuplicates(req, res, next);
+
+      expect(adminShowService.getShowsWithDuplicates).toHaveBeenCalled();
+      expect(res.status).toHaveBeenCalledWith(200);
+      expect(res.json).toHaveBeenCalledWith({
+        message: 'Retrieved shows with duplicate episodes',
+        results: mockShows,
+      });
+    });
+
+    it('should return empty array when no shows have duplicates', async () => {
+      (adminShowService.getShowsWithDuplicates as jest.Mock).mockResolvedValue([]);
+
+      await getShowsWithDuplicates(req, res, next);
+
+      expect(res.status).toHaveBeenCalledWith(200);
+      expect(res.json).toHaveBeenCalledWith({
+        message: 'Retrieved shows with duplicate episodes',
+        results: [],
+      });
+    });
+
+    it('should call next with error when service throws', async () => {
+      const error = new Error('Service error');
+      (adminShowService.getShowsWithDuplicates as jest.Mock).mockRejectedValue(error);
+
+      await getShowsWithDuplicates(req, res, next);
+
+      expect(next).toHaveBeenCalledWith(error);
+      expect(res.status).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('getDuplicateEpisodes', () => {
+    it('should return duplicate episodes for a show', async () => {
+      const mockEpisodes = [
+        { id: 101, title: 'Pilot', episodeNumber: 1, seasonNumber: 1 },
+        { id: 105, title: 'Pilot (Duplicate)', episodeNumber: 1, seasonNumber: 1 },
+      ];
+      (adminShowService.getDuplicateEpisodes as jest.Mock).mockResolvedValue(mockEpisodes);
+
+      req.params = { showId: '10' };
+
+      await getDuplicateEpisodes(req, res, next);
+
+      expect(adminShowService.getDuplicateEpisodes).toHaveBeenCalledWith(10);
+      expect(res.status).toHaveBeenCalledWith(200);
+      expect(res.json).toHaveBeenCalledWith({
+        message: 'Retrieved duplicate episodes for show',
+        results: mockEpisodes,
+      });
+    });
+
+    it('should return empty array when no duplicates exist', async () => {
+      (adminShowService.getDuplicateEpisodes as jest.Mock).mockResolvedValue([]);
+
+      req.params = { showId: '10' };
+
+      await getDuplicateEpisodes(req, res, next);
+
+      expect(adminShowService.getDuplicateEpisodes).toHaveBeenCalledWith(10);
+      expect(res.status).toHaveBeenCalledWith(200);
+      expect(res.json).toHaveBeenCalledWith({
+        message: 'Retrieved duplicate episodes for show',
+        results: [],
+      });
+    });
+
+    it('should call next with error when service throws', async () => {
+      const error = new Error('Show not found');
+      (adminShowService.getDuplicateEpisodes as jest.Mock).mockRejectedValue(error);
+
+      req.params = { showId: '10' };
+
+      await getDuplicateEpisodes(req, res, next);
+
+      expect(next).toHaveBeenCalledWith(error);
+      expect(res.status).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('deleteEpisode', () => {
+    it('should delete an episode and return success message', async () => {
+      (adminShowService.deleteEpisode as jest.Mock).mockResolvedValue(undefined);
+
+      req.params = { showId: '10', episodeId: '101' };
+
+      await deleteEpisode(req, res, next);
+
+      expect(adminShowService.deleteEpisode).toHaveBeenCalledWith(101, 10);
+      expect(res.status).toHaveBeenCalledWith(200);
+      expect(res.json).toHaveBeenCalledWith({
+        message: 'Episode 101 deleted successfully',
+      });
+    });
+
+    it('should handle string IDs by converting to numbers', async () => {
+      (adminShowService.deleteEpisode as jest.Mock).mockResolvedValue(undefined);
+
+      req.params = { showId: '42', episodeId: '789' };
+
+      await deleteEpisode(req, res, next);
+
+      expect(adminShowService.deleteEpisode).toHaveBeenCalledWith(789, 42);
+    });
+
+    it('should call next with error when service throws', async () => {
+      const error = new Error('Delete failed');
+      (adminShowService.deleteEpisode as jest.Mock).mockRejectedValue(error);
+
+      req.params = { showId: '10', episodeId: '101' };
+
+      await deleteEpisode(req, res, next);
+
+      expect(next).toHaveBeenCalledWith(error);
+      expect(res.status).not.toHaveBeenCalled();
     });
   });
 });

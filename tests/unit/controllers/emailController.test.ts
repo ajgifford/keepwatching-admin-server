@@ -219,6 +219,21 @@ describe('EmailController', () => {
       expect(res.json).toHaveBeenCalledWith({ error: 'Account has no profiles' });
     });
 
+    it('should handle no upcoming content error', async () => {
+      const error = new Error('Account has no upcoming content');
+      (emailService.sendDiscoveryEmailToAccount as jest.Mock).mockRejectedValue(error);
+      req.body = { email: 'test@example.com' };
+
+      await sendWeeklyDiscoverEmailByAccount(req, res, next);
+
+      expect(cliLogger.error).toHaveBeenCalledWith('Send discover to account failed:', error);
+      expect(res.status).toHaveBeenCalledWith(400);
+      expect(res.json).toHaveBeenCalledWith({
+        error: 'Account has no upcoming content this week',
+        suggestion: 'Use /api/admin/send-discovery-to-account instead',
+      });
+    });
+
     it('should handle generic errors', async () => {
       const error = new Error('Unknown error');
       (emailService.sendDiscoveryEmailToAccount as jest.Mock).mockRejectedValue(error);
@@ -703,6 +718,70 @@ describe('EmailController', () => {
       expect(res.json).toHaveBeenCalledWith({
         message: 'Email action completed successfully',
       });
+    });
+
+    it('should return 500 when sendToAll is true but recipients are provided', async () => {
+      req.body = {
+        subject: 'Test Subject',
+        message: 'Test Message',
+        sendToAll: true,
+        recipients: [1, 2, 3],
+        scheduledDate: null,
+        action: 'send',
+      };
+
+      await sendEmail(req, res, next);
+
+      expect(res.status).toHaveBeenCalledWith(500);
+      expect(res.json).toHaveBeenCalledWith({ error: 'Failed to take email action' });
+    });
+
+    it('should return 500 when sendToAll is false but no recipients provided', async () => {
+      req.body = {
+        subject: 'Test Subject',
+        message: 'Test Message',
+        sendToAll: false,
+        recipients: [],
+        scheduledDate: null,
+        action: 'send',
+      };
+
+      await sendEmail(req, res, next);
+
+      expect(res.status).toHaveBeenCalledWith(500);
+      expect(res.json).toHaveBeenCalledWith({ error: 'Failed to take email action' });
+    });
+
+    it('should return 500 when action is schedule but scheduledDate is missing', async () => {
+      req.body = {
+        subject: 'Test Subject',
+        message: 'Test Message',
+        sendToAll: true,
+        recipients: [],
+        scheduledDate: null,
+        action: 'schedule',
+      };
+
+      await sendEmail(req, res, next);
+
+      expect(res.status).toHaveBeenCalledWith(500);
+      expect(res.json).toHaveBeenCalledWith({ error: 'Failed to take email action' });
+    });
+
+    it('should return 500 when action is not schedule but scheduledDate is provided', async () => {
+      req.body = {
+        subject: 'Test Subject',
+        message: 'Test Message',
+        sendToAll: true,
+        recipients: [],
+        scheduledDate: '2025-06-01T10:00:00Z',
+        action: 'send',
+      };
+
+      await sendEmail(req, res, next);
+
+      expect(res.status).toHaveBeenCalledWith(500);
+      expect(res.json).toHaveBeenCalledWith({ error: 'Failed to take email action' });
     });
 
     it('should handle errors when sending email', async () => {

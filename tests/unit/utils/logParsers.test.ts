@@ -375,6 +375,28 @@ More context here
       const result = parseErrorLogFile(content, LogService.APP, '/var/log/errors/error.log');
       expect(result[0].logFile).toBe('error.log');
     });
+
+    it('should push existing fallback error before starting a new fallback error', () => {
+      // Two consecutive fallback-pattern errors (no timestamp) — second one must flush first
+      const content = `Error: First fallback error\nError: Second fallback error`;
+
+      const result = parseErrorLogFile(content, LogService.APP, 'error.log');
+
+      expect(result).toHaveLength(2);
+      expect(result[0].message).toBe('Error: First fallback error');
+      expect(result[1].message).toBe('Error: Second fallback error');
+    });
+
+    it('should capture non-matching non-empty lines as standalone entries when no current error is tracked', () => {
+      // A line that does not match a timestamp, Error:, or "at " — and currentError is null
+      const content = 'This is some unexpected plain text line';
+
+      const result = parseErrorLogFile(content, LogService.APP, 'error.log');
+
+      expect(result).toHaveLength(1);
+      expect(result[0].message).toBe('This is some unexpected plain text line');
+      expect(result[0].level).toBe(LogLevel.ERROR);
+    });
   });
 
   describe('parseLogTimestamp', () => {

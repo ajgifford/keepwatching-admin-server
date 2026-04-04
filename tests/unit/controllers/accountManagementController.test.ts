@@ -339,4 +339,79 @@ describe('AccountManagementController', () => {
       });
     });
   });
+
+  describe('error handling', () => {
+    it('should call next with error for getProfiles', async () => {
+      const error = new Error('Service error');
+      (profileService.getAdminProfilesByAccount as jest.Mock).mockRejectedValue(error);
+      req.params = { accountId: '1' };
+
+      await getProfiles(req, res, next);
+
+      expect(next).toHaveBeenCalledWith(error);
+    });
+
+    it('should call next with error for editProfile', async () => {
+      const error = new Error('Service error');
+      (profileService.updateProfileName as jest.Mock).mockRejectedValue(error);
+      req.params = { profileId: '1' };
+      req.body = { name: 'New Name' };
+
+      await editProfile(req, res, next);
+
+      expect(next).toHaveBeenCalledWith(error);
+    });
+
+    it('should call next with error for deleteProfile', async () => {
+      const error = new Error('Service error');
+      (profileService.deleteProfile as jest.Mock).mockRejectedValue(error);
+      req.params = { profileId: '1' };
+
+      await deleteProfile(req, res, next);
+
+      expect(next).toHaveBeenCalledWith(error);
+    });
+
+    it('should call next with error for getProfileShowsList', async () => {
+      const error = new Error('Service error');
+      (adminShowService.getAllShowsByProfile as jest.Mock).mockRejectedValue(error);
+      req.params = { profileId: '1' };
+      req.query = {};
+
+      await getProfileShowsList(req, res, next);
+
+      expect(next).toHaveBeenCalledWith(error);
+    });
+
+    it('should call next with error for getProfileMoviesList', async () => {
+      const error = new Error('Service error');
+      (adminMovieService.getAllMoviesByProfile as jest.Mock).mockRejectedValue(error);
+      req.params = { profileId: '1' };
+      req.query = {};
+
+      await getProfileMoviesList(req, res, next);
+
+      expect(next).toHaveBeenCalledWith(error);
+    });
+
+    it('should call next with error for verifyEmail', async () => {
+      const error = new Error('Service error');
+      (accountService.verifyEmail as jest.Mock).mockRejectedValue(error);
+      req.params = { accountUid: 'abc123' };
+
+      await verifyEmail(req, res, next);
+
+      expect(next).toHaveBeenCalledWith(error);
+    });
+
+    it('should call next with error for getAccountPreferences', async () => {
+      const error = new Error('Service error');
+      (preferencesService.getAccountPreferences as jest.Mock).mockRejectedValue(error);
+      req.params = { accountId: '1' };
+
+      await getAccountPreferences(req, res, next);
+
+      expect(next).toHaveBeenCalledWith(error);
+    });
+  });
 });

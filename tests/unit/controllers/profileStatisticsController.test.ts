@@ -374,6 +374,54 @@ describe('ProfileStatisticsController', () => {
   });
 
   describe('error handling', () => {
+    const functions: Array<[string, (req: any, res: any, next: any) => Promise<void>]> = [
+      ['getProfileStatistics', getProfileStatistics],
+      ['getWatchingVelocity', getWatchingVelocity],
+      ['getDailyActivity', getDailyActivity],
+      ['getWeeklyActivity', getWeeklyActivity],
+      ['getMonthlyActivity', getMonthlyActivity],
+      ['getActivityTimeline', getActivityTimeline],
+      ['getBingeWatchingStats', getBingeWatchingStats],
+      ['getWatchStreakStats', getWatchStreakStats],
+      ['getTimeToWatchStats', getTimeToWatchStats],
+      ['getSeasonalViewingStats', getSeasonalViewingStats],
+      ['getMilestoneStats', getMilestoneStats],
+      ['getContentDepthStats', getContentDepthStats],
+      ['getContentDiscoveryStats', getContentDiscoveryStats],
+      ['getAbandonmentRiskStats', getAbandonmentRiskStats],
+      ['getUnairedContentStats', getUnairedContentStats],
+    ];
+
+    const serviceMap: Record<string, jest.Mock> = {
+      getProfileStatistics: profileStatisticsService.getProfileStatistics as jest.Mock,
+      getWatchingVelocity: profileStatisticsService.getWatchingVelocity as jest.Mock,
+      getDailyActivity: profileStatisticsService.getDailyActivity as jest.Mock,
+      getWeeklyActivity: profileStatisticsService.getWeeklyActivity as jest.Mock,
+      getMonthlyActivity: profileStatisticsService.getMonthlyActivity as jest.Mock,
+      getActivityTimeline: profileStatisticsService.getActivityTimeline as jest.Mock,
+      getBingeWatchingStats: profileStatisticsService.getBingeWatchingStats as jest.Mock,
+      getWatchStreakStats: profileStatisticsService.getWatchStreakStats as jest.Mock,
+      getTimeToWatchStats: profileStatisticsService.getTimeToWatchStats as jest.Mock,
+      getSeasonalViewingStats: profileStatisticsService.getSeasonalViewingStats as jest.Mock,
+      getMilestoneStats: profileStatisticsService.getMilestoneStats as jest.Mock,
+      getContentDepthStats: profileStatisticsService.getContentDepthStats as jest.Mock,
+      getContentDiscoveryStats: profileStatisticsService.getContentDiscoveryStats as jest.Mock,
+      getAbandonmentRiskStats: profileStatisticsService.getAbandonmentRiskStats as jest.Mock,
+      getUnairedContentStats: profileStatisticsService.getUnairedContentStats as jest.Mock,
+    };
+
+    functions.forEach(([name, fn]) => {
+      it(`should call next with error for ${name}`, async () => {
+        const error = new Error('Service error');
+        serviceMap[name].mockRejectedValue(error);
+        req.params = { profileId: '1' };
+
+        await fn(req, res, next);
+
+        expect(next).toHaveBeenCalledWith(error);
+      });
+    });
+
     it('should handle errors via next middleware', async () => {
       const error = new Error('Service error');
       (profileStatisticsService.getProfileStatistics as jest.Mock).mockRejectedValue(error);

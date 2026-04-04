@@ -8,6 +8,7 @@ import {
   getTrendingContent,
   getContentEngagement,
   getAdminDashboard,
+  backfillAchievements,
 } from '@controllers/adminStatisticsController';
 import { adminStatisticsService } from '@ajgifford/keepwatching-common-server/services';
 import { beforeEach, describe, expect, it } from '@jest/globals';
@@ -23,6 +24,7 @@ jest.mock('@ajgifford/keepwatching-common-server/services', () => ({
     getTrendingContent: jest.fn(),
     getContentEngagement: jest.fn(),
     getAdminDashboard: jest.fn(),
+    backfillAchievements: jest.fn(),
   },
 }));
 
@@ -279,12 +281,116 @@ describe('AdminStatisticsController', () => {
     });
   });
 
+  describe('backfillAchievements', () => {
+    it('should backfill achievements and return results', async () => {
+      const mockResults = { totalNewAchievements: 42, profilesProcessed: 10 };
+      (adminStatisticsService.backfillAchievements as jest.Mock).mockResolvedValue(mockResults);
+
+      await backfillAchievements(req, res, next);
+
+      expect(adminStatisticsService.backfillAchievements).toHaveBeenCalled();
+      expect(res.status).toHaveBeenCalledWith(200);
+      expect(res.json).toHaveBeenCalledWith({
+        message: 'Backfill complete: 42 new achievements recorded across 10 profiles',
+        results: mockResults,
+      });
+    });
+
+    it('should call next with error when backfill fails', async () => {
+      const error = new Error('Backfill failed');
+      (adminStatisticsService.backfillAchievements as jest.Mock).mockRejectedValue(error);
+
+      await backfillAchievements(req, res, next);
+
+      expect(next).toHaveBeenCalledWith(error);
+    });
+  });
+
   describe('error handling', () => {
-    it('should handle errors via next middleware', async () => {
+    it('should call next with error for getPlatformOverview', async () => {
       const error = new Error('Service error');
       (adminStatisticsService.getPlatformOverview as jest.Mock).mockRejectedValue(error);
 
       await getPlatformOverview(req, res, next);
+
+      expect(next).toHaveBeenCalledWith(error);
+    });
+
+    it('should call next with error for getPlatformTrends', async () => {
+      const error = new Error('Service error');
+      (adminStatisticsService.getPlatformTrends as jest.Mock).mockRejectedValue(error);
+      req.query = {};
+
+      await getPlatformTrends(req, res, next);
+
+      expect(next).toHaveBeenCalledWith(error);
+    });
+
+    it('should call next with error for getAccountRankings', async () => {
+      const error = new Error('Service error');
+      (adminStatisticsService.getAccountRankings as jest.Mock).mockRejectedValue(error);
+      req.query = {};
+
+      await getAccountRankings(req, res, next);
+
+      expect(next).toHaveBeenCalledWith(error);
+    });
+
+    it('should call next with error for getAccountHealthMetrics', async () => {
+      const error = new Error('Service error');
+      (adminStatisticsService.getAccountHealthMetrics as jest.Mock).mockRejectedValue(error);
+
+      await getAccountHealthMetrics(req, res, next);
+
+      expect(next).toHaveBeenCalledWith(error);
+    });
+
+    it('should call next with error for getAccountHealth', async () => {
+      const error = new Error('Service error');
+      (adminStatisticsService.getAccountHealth as jest.Mock).mockRejectedValue(error);
+      req.params = { accountId: '1' };
+
+      await getAccountHealth(req, res, next);
+
+      expect(next).toHaveBeenCalledWith(error);
+    });
+
+    it('should call next with error for getContentPopularity', async () => {
+      const error = new Error('Service error');
+      (adminStatisticsService.getContentPopularity as jest.Mock).mockRejectedValue(error);
+      req.query = {};
+
+      await getContentPopularity(req, res, next);
+
+      expect(next).toHaveBeenCalledWith(error);
+    });
+
+    it('should call next with error for getTrendingContent', async () => {
+      const error = new Error('Service error');
+      (adminStatisticsService.getTrendingContent as jest.Mock).mockRejectedValue(error);
+      req.query = {};
+
+      await getTrendingContent(req, res, next);
+
+      expect(next).toHaveBeenCalledWith(error);
+    });
+
+    it('should call next with error for getContentEngagement', async () => {
+      const error = new Error('Service error');
+      (adminStatisticsService.getContentEngagement as jest.Mock).mockRejectedValue(error);
+      req.params = { contentId: '1' };
+      req.query = {};
+
+      await getContentEngagement(req, res, next);
+
+      expect(next).toHaveBeenCalledWith(error);
+    });
+
+    it('should call next with error for getAdminDashboard', async () => {
+      const error = new Error('Service error');
+      (adminStatisticsService.getAdminDashboard as jest.Mock).mockRejectedValue(error);
+
+      await getAdminDashboard(req, res, next);
 
       expect(next).toHaveBeenCalledWith(error);
     });

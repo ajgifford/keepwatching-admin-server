@@ -286,15 +286,48 @@ describe('AccountStatisticsController', () => {
   });
 
   describe('error handling', () => {
-    it('should handle errors via next middleware', async () => {
-      const error = new Error('Service error');
-      (accountStatisticsService.getAccountStatistics as jest.Mock).mockRejectedValue(error);
+    const functions: Array<[string, (req: any, res: any, next: any) => Promise<void>]> = [
+      ['getAccountStatistics', getAccountStatistics],
+      ['getAccountWatchingVelocity', getAccountWatchingVelocity],
+      ['getAccountActivityTimeline', getAccountActivityTimeline],
+      ['getAccountBingeWatchingStats', getAccountBingeWatchingStats],
+      ['getAccountWatchStreakStats', getAccountWatchStreakStats],
+      ['getAccountTimeToWatchStats', getAccountTimeToWatchStats],
+      ['getAccountSeasonalViewingStats', getAccountSeasonalViewingStats],
+      ['getAccountMilestoneStats', getAccountMilestoneStats],
+      ['getAccountContentDepthStats', getAccountContentDepthStats],
+      ['getAccountContentDiscoveryStats', getAccountContentDiscoveryStats],
+      ['getAccountAbandonmentRiskStats', getAccountAbandonmentRiskStats],
+      ['getAccountUnairedContentStats', getAccountUnairedContentStats],
+      ['getProfileComparison', getProfileComparison],
+    ];
 
-      req.params = { accountId: '1' };
+    const serviceMap: Record<string, jest.Mock> = {
+      getAccountStatistics: accountStatisticsService.getAccountStatistics as jest.Mock,
+      getAccountWatchingVelocity: accountStatisticsService.getAccountWatchingVelocity as jest.Mock,
+      getAccountActivityTimeline: accountStatisticsService.getAccountActivityTimeline as jest.Mock,
+      getAccountBingeWatchingStats: accountStatisticsService.getAccountBingeWatchingStats as jest.Mock,
+      getAccountWatchStreakStats: accountStatisticsService.getAccountWatchStreakStats as jest.Mock,
+      getAccountTimeToWatchStats: accountStatisticsService.getAccountTimeToWatchStats as jest.Mock,
+      getAccountSeasonalViewingStats: accountStatisticsService.getAccountSeasonalViewingStats as jest.Mock,
+      getAccountMilestoneStats: accountStatisticsService.getAccountMilestoneStats as jest.Mock,
+      getAccountContentDepthStats: accountStatisticsService.getAccountContentDepthStats as jest.Mock,
+      getAccountContentDiscoveryStats: accountStatisticsService.getAccountContentDiscoveryStats as jest.Mock,
+      getAccountAbandonmentRiskStats: accountStatisticsService.getAccountAbandonmentRiskStats as jest.Mock,
+      getAccountUnairedContentStats: accountStatisticsService.getAccountUnairedContentStats as jest.Mock,
+      getProfileComparison: accountStatisticsService.getProfileComparison as jest.Mock,
+    };
 
-      await getAccountStatistics(req, res, next);
+    functions.forEach(([name, fn]) => {
+      it(`should call next with error for ${name}`, async () => {
+        const error = new Error('Service error');
+        serviceMap[name].mockRejectedValue(error);
+        req.params = { accountId: '1' };
 
-      expect(next).toHaveBeenCalledWith(error);
+        await fn(req, res, next);
+
+        expect(next).toHaveBeenCalledWith(error);
+      });
     });
   });
 });

@@ -6,6 +6,7 @@ import {
 } from '@controllers/notificationController';
 import { notificationsService } from '@ajgifford/keepwatching-common-server/services';
 import { beforeEach, describe, expect, it } from '@jest/globals';
+import { z } from 'zod';
 
 jest.mock('@ajgifford/keepwatching-common-server/services', () => ({
   notificationsService: {
@@ -203,6 +204,60 @@ describe('NotificationController', () => {
       await deleteNotification(req, res, next);
 
       expect(next).toHaveBeenCalledWith(error);
+    });
+
+    it('should re-throw ZodError as BadRequestError when parse throws ZodError', async () => {
+      const zodError = new z.ZodError([{ code: 'custom', message: 'Invalid notification ID', path: ['notificationId'] }]);
+      mockNotificationIdParamParse.mockImplementation(() => { throw zodError; });
+
+      await deleteNotification(req, res, next);
+
+      expect(next).toHaveBeenCalled();
+      const calledError = next.mock.calls[0][0];
+      expect(calledError.message).toBe('Invalid notification ID');
+    });
+  });
+
+  describe('ZodError re-throw branches', () => {
+    it('getAllNotifications should re-throw ZodError as BadRequestError', async () => {
+      const zodError = new z.ZodError([{ code: 'custom', message: 'Invalid query param', path: ['page'] }]);
+      mockSafeParse.mockReturnValue({ success: false, error: zodError });
+
+      // Override to make safeParse fail with a ZodError that needs re-throwing
+      // The controller uses safeParse so it won't throw — instead it throws BadRequestError directly
+      // The ZodError instanceof branch is hit when catch receives a ZodError from elsewhere
+      // Simulate by making the service throw a ZodError
+      mockSafeParse.mockReturnValue({ success: true, data: { page: 1, pageSize: 10 } });
+      const zodError2 = new z.ZodError([{ code: 'custom', message: 'ZodError from service', path: [] }]);
+      (notificationsService.getAllNotifications as jest.Mock).mockRejectedValue(zodError2);
+
+      await getAllNotifications(req, res, next);
+
+      expect(next).toHaveBeenCalled();
+      const calledError = next.mock.calls[0][0];
+      expect(calledError.message).toBe('ZodError from service');
+    });
+
+    it('addNotification should re-throw ZodError as BadRequestError', async () => {
+      const zodError = new z.ZodError([{ code: 'custom', message: 'Invalid body field', path: ['title'] }]);
+      mockNotificationBodyParse.mockImplementation(() => { throw zodError; });
+
+      await addNotification(req, res, next);
+
+      expect(next).toHaveBeenCalled();
+      const calledError = next.mock.calls[0][0];
+      expect(calledError.message).toBe('Invalid body field');
+    });
+
+    it('updateNotification should re-throw ZodError as BadRequestError', async () => {
+      const zodError = new z.ZodError([{ code: 'custom', message: 'Invalid update field', path: ['message'] }]);
+      mockNotificationIdParamParse.mockImplementation(() => { throw zodError; });
+
+      await updateNotification(req, res, next);
+
+      expect(next).toHaveBeenCalled();
+      const calledError = next.mock.calls[0][0];
+      expect(calledError.message).toBe('Invalid update field');
     });
   });
 });

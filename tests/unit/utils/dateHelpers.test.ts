@@ -14,7 +14,7 @@ describe('dateHelpers', () => {
 
     it('should return date in format: Month-DD-YYYY', () => {
       // Set date to January 15, 2025
-      jest.setSystemTime(new Date('2025-01-15T12:00:00Z'));
+      jest.setSystemTime(new Date('2025-01-15T12:00:00Z').getTime());
 
       const result = getCurrentDate();
 
@@ -23,7 +23,7 @@ describe('dateHelpers', () => {
 
     it('should pad single digit days with zero', () => {
       // Set date to March 5, 2025
-      jest.setSystemTime(new Date('2025-03-05T12:00:00Z'));
+      jest.setSystemTime(new Date('2025-03-05T12:00:00Z').getTime());
 
       const result = getCurrentDate();
 
@@ -32,41 +32,41 @@ describe('dateHelpers', () => {
 
     it('should handle different months correctly', () => {
       // Test December
-      jest.setSystemTime(new Date('2025-12-25T12:00:00Z'));
+      jest.setSystemTime(new Date('2025-12-25T12:00:00Z').getTime());
       expect(getCurrentDate()).toBe('December-25-2025');
 
       // Test February
-      jest.setSystemTime(new Date('2025-02-14T12:00:00Z'));
+      jest.setSystemTime(new Date('2025-02-14T12:00:00Z').getTime());
       expect(getCurrentDate()).toBe('February-14-2025');
 
       // Test July
-      jest.setSystemTime(new Date('2025-07-04T12:00:00Z'));
+      jest.setSystemTime(new Date('2025-07-04T12:00:00Z').getTime());
       expect(getCurrentDate()).toBe('July-04-2025');
     });
 
     it('should handle end of month dates', () => {
       // January 31
-      jest.setSystemTime(new Date('2025-01-31T12:00:00Z'));
+      jest.setSystemTime(new Date('2025-01-31T12:00:00Z').getTime());
       expect(getCurrentDate()).toBe('January-31-2025');
 
       // February 28 (non-leap year)
-      jest.setSystemTime(new Date('2025-02-28T12:00:00Z'));
+      jest.setSystemTime(new Date('2025-02-28T12:00:00Z').getTime());
       expect(getCurrentDate()).toBe('February-28-2025');
     });
 
     it('should handle leap year correctly', () => {
       // February 29, 2024 (leap year)
-      jest.setSystemTime(new Date('2024-02-29T12:00:00Z'));
+      jest.setSystemTime(new Date('2024-02-29T12:00:00Z').getTime());
       expect(getCurrentDate()).toBe('February-29-2024');
     });
 
     it('should handle year changes correctly', () => {
       // New Year's Day
-      jest.setSystemTime(new Date('2026-01-01T00:00:01Z'));
+      jest.setSystemTime(new Date('2026-01-01T00:00:01Z').getTime());
       expect(getCurrentDate()).toBe('January-01-2026');
 
       // New Year's Eve
-      jest.setSystemTime(new Date('2025-12-31T23:59:59Z'));
+      jest.setSystemTime(new Date('2025-12-31T23:59:59Z').getTime());
       expect(getCurrentDate()).toBe('December-31-2025');
     });
   });

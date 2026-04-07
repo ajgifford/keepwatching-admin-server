@@ -16,7 +16,7 @@ export const getAllNotifications = asyncHandler(async (req: Request, res: Respon
     const queryResult = getAllNotificationsQuerySchema.safeParse(req.query);
 
     if (!queryResult.success) {
-      throw new BadRequestError(`Invalid query parameters: ${queryResult.error.errors[0].message}`);
+      throw new BadRequestError(`Invalid query parameters: ${queryResult.error.issues[0].message}`);
     }
 
     const { page, pageSize, ...filterOptions } = queryResult.data;
@@ -26,7 +26,7 @@ export const getAllNotifications = asyncHandler(async (req: Request, res: Respon
     res.status(200).json(response);
   } catch (error) {
     if (error instanceof z.ZodError) {
-      throw new BadRequestError(error.errors[0].message);
+      throw new BadRequestError(error.issues[0].message);
     }
     next(error);
   }
@@ -40,7 +40,7 @@ export const addNotification = asyncHandler(async (req: Request, res: Response, 
     res.status(200).json({ message: 'Notification added' });
   } catch (error) {
     if (error instanceof z.ZodError) {
-      throw new BadRequestError(error.errors[0].message);
+      throw new BadRequestError(error.issues[0].message);
     }
     next(error);
   }
@@ -66,7 +66,7 @@ export const updateNotification = asyncHandler(async (req: Request, res: Respons
     res.status(200).json({ message: 'Notification updated successfully' });
   } catch (error) {
     if (error instanceof z.ZodError) {
-      throw new BadRequestError(error.errors[0].message);
+      throw new BadRequestError(error.issues[0].message);
     }
     next(error);
   }
@@ -80,7 +80,7 @@ export const deleteNotification = asyncHandler(async (req: Request, res: Respons
     res.status(200).json({ message: 'Notification deleted successfully' });
   } catch (error) {
     if (error instanceof z.ZodError) {
-      throw new BadRequestError(error.errors[0].message);
+      throw new BadRequestError(error.issues[0].message);
     }
     next(error);
   }

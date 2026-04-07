@@ -2,7 +2,7 @@ export default {
   apps: [
     {
       name: 'keepwatching-admin-server',
-      script: 'dist/server.js',
+      script: 'dist/server.mjs',
       instances: 1,
       exec_mode: 'fork',
       watch: false,

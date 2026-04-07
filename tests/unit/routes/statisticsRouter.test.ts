@@ -4,6 +4,7 @@ import express from 'express';
 import request from 'supertest';
 
 jest.mock('@routes/statistics/accountStatisticsRouter', () => {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
   const express = require('express');
   const r = express.Router();
   r.get('/api/v1/accounts/:accountId/statistics', (_req: any, res: any) =>
@@ -13,6 +14,7 @@ jest.mock('@routes/statistics/accountStatisticsRouter', () => {
 });
 
 jest.mock('@routes/statistics/profileStatisticsRouter', () => {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
   const express = require('express');
   const r = express.Router();
   r.get('/api/v1/accounts/:accountId/profiles/:profileId/statistics', (_req: any, res: any) =>
@@ -22,6 +24,7 @@ jest.mock('@routes/statistics/profileStatisticsRouter', () => {
 });
 
 jest.mock('@routes/statistics/adminStatisticsRouter', () => {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
   const express = require('express');
   const r = express.Router();
   r.get('/api/v1/admin/statistics/dashboard', (_req: any, res: any) =>

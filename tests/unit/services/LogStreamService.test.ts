@@ -179,10 +179,9 @@ describe('LogStreamService', () => {
 
       // Find the nginx not found entry
       const nginxEntry = entries.find(e => e.includes('nginx'));
-      if (nginxEntry) {
-        const parsed = JSON.parse(nginxEntry.split('\n\n')[0]);
-        expect(parsed.level).toBe(LogLevel.WARN);
-      }
+      expect(nginxEntry).toBeDefined();
+      const parsed = JSON.parse(nginxEntry!.split('\n\n')[0]);
+      expect(parsed.level).toBe(LogLevel.WARN);
     });
   });
 

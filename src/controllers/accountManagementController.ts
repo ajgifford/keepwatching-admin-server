@@ -21,12 +21,8 @@ import asyncHandler from 'express-async-handler';
  * @route GET /api/v1/accounts
  */
 export const getAccounts = asyncHandler(async (req: Request, res: Response) => {
-  try {
-    const combinedUsers = await accountService.getAccounts();
-    res.json({ message: `Retrieved ${combinedUsers.length} accounts`, results: combinedUsers });
-  } catch (error) {
-    throw error;
-  }
+  const combinedUsers = await accountService.getAccounts();
+  res.json({ message: `Retrieved ${combinedUsers.length} accounts`, results: combinedUsers });
 });
 
 /**

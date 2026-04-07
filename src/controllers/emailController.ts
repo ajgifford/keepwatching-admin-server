@@ -4,7 +4,6 @@ import { emailService } from '@ajgifford/keepwatching-common-server/services';
 import { generateDiscoveryEmailHTML, generateWeeklyDigestHTML } from '@ajgifford/keepwatching-common-server/utils';
 import { NextFunction, Request, Response } from 'express';
 import asyncHandler from 'express-async-handler';
-import { off } from 'process';
 import { z } from 'zod';
 
 const emailTemplateIdQuerySchema = z.object({
@@ -73,7 +72,7 @@ const emailSchema = z
  *
  * @route POST /api/v1/admin/email/digest/send-account
  */
-export const sendWeeklyDigestEmailByAccount = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+export const sendWeeklyDigestEmailByAccount = asyncHandler(async (req: Request, res: Response, _next: NextFunction) => {
   try {
     if (!isEmailEnabled()) {
       res.status(400).json({ error: 'Email service is disabled' });
@@ -93,16 +92,17 @@ export const sendWeeklyDigestEmailByAccount = asyncHandler(async (req: Request, 
       accountEmail: email,
       note: 'This account had upcoming content and received a digest email',
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     cliLogger.error('Send digest to account failed:', error);
+    const message = error instanceof Error ? error.message : '';
 
-    if (error.message.includes('Account not found')) {
+    if (message.includes('Account not found')) {
       res.status(404).json({ error: 'Account not found' });
       return;
-    } else if (error.message.includes('has no profiles')) {
+    } else if (message.includes('has no profiles')) {
       res.status(400).json({ error: 'Account has no profiles' });
       return;
-    } else if (error.message.includes('no upcoming content')) {
+    } else if (message.includes('no upcoming content')) {
       res.status(400).json({
         error: 'Account has no upcoming content this week',
         suggestion: 'Use /api/admin/send-discovery-to-account instead',
@@ -120,7 +120,7 @@ export const sendWeeklyDigestEmailByAccount = asyncHandler(async (req: Request, 
  * @route POST /api/v1/admin/email/discover/send-account
  */
 export const sendWeeklyDiscoverEmailByAccount = asyncHandler(
-  async (req: Request, res: Response, next: NextFunction) => {
+  async (req: Request, res: Response, _next: NextFunction) => {
     try {
       if (!isEmailEnabled()) {
         res.status(400).json({ error: 'Email service is disabled' });
@@ -140,16 +140,17 @@ export const sendWeeklyDiscoverEmailByAccount = asyncHandler(
         accountEmail: email,
         note: 'This account did not have upcoming content and received a discover email',
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
       cliLogger.error('Send discover to account failed:', error);
+      const message = error instanceof Error ? error.message : '';
 
-      if (error.message.includes('Account not found')) {
+      if (message.includes('Account not found')) {
         res.status(404).json({ error: 'Account not found' });
         return;
-      } else if (error.message.includes('has no profiles')) {
+      } else if (message.includes('has no profiles')) {
         res.status(400).json({ error: 'Account has no profiles' });
         return;
-      } else if (error.message.includes('no upcoming content')) {
+      } else if (message.includes('no upcoming content')) {
         res.status(400).json({
           error: 'Account has no upcoming content this week',
           suggestion: 'Use /api/admin/send-discovery-to-account instead',
@@ -167,7 +168,7 @@ export const sendWeeklyDiscoverEmailByAccount = asyncHandler(
  *
  * @route POST /api/v1/admin/email/weekly/send-account
  */
-export const sendWeeklyEmailByAccount = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+export const sendWeeklyEmailByAccount = asyncHandler(async (req: Request, res: Response, _next: NextFunction) => {
   try {
     if (!isEmailEnabled()) {
       res.status(400).json({ error: 'Email service is disabled' });
@@ -192,13 +193,14 @@ export const sendWeeklyEmailByAccount = asyncHandler(async (req: Request, res: R
           ? 'Account had upcoming content and received a digest email'
           : 'Account had no upcoming content and received a discovery email',
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     cliLogger.error('Send email to account failed:', error);
+    const message = error instanceof Error ? error.message : '';
 
-    if (error.message.includes('Account not found')) {
+    if (message.includes('Account not found')) {
       res.status(404).json({ error: 'Account not found' });
       return;
-    } else if (error.message.includes('has no profiles')) {
+    } else if (message.includes('has no profiles')) {
       res.status(400).json({ error: 'Account has no profiles' });
       return;
     }
@@ -212,7 +214,7 @@ export const sendWeeklyEmailByAccount = asyncHandler(async (req: Request, res: R
  *
  * @route POST /api/v1/admin/email/digest/preview-account
  */
-export const previewWeeklyEmailByAccount = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+export const previewWeeklyEmailByAccount = asyncHandler(async (req: Request, res: Response, _next: NextFunction) => {
   try {
     if (!isEmailEnabled()) {
       res.status(400).json({ error: 'Email service is disabled' });
@@ -240,13 +242,14 @@ export const previewWeeklyEmailByAccount = asyncHandler(async (req: Request, res
 
     res.setHeader('Content-Type', 'text/html');
     res.send(htmlContent);
-  } catch (error: any) {
+  } catch (error: unknown) {
     cliLogger.error('Preview account email HTML failed:', error);
+    const message = error instanceof Error ? error.message : '';
 
-    if (error.message.includes('Account not found')) {
+    if (message.includes('Account not found')) {
       res.status(404).json({ error: 'Account not found' });
       return;
-    } else if (error.message.includes('has no profiles')) {
+    } else if (message.includes('has no profiles')) {
       res.status(400).json({ error: 'Account has no profiles' });
       return;
     }
@@ -260,7 +263,7 @@ export const previewWeeklyEmailByAccount = asyncHandler(async (req: Request, res
  *
  * @route POST /api/v1/admin/email/weekly/send-all
  */
-export const sendWeeklyEmailToAll = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+export const sendWeeklyEmailToAll = asyncHandler(async (req: Request, res: Response, _next: NextFunction) => {
   try {
     if (!isEmailEnabled()) {
       res.status(400).json({ error: 'Email service is disabled' });
@@ -281,7 +284,7 @@ export const sendWeeklyEmailToAll = asyncHandler(async (req: Request, res: Respo
  *
  * @route GET /api/v1/admin/email/templates
  */
-export const getEmailTemplates = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+export const getEmailTemplates = asyncHandler(async (req: Request, res: Response, _next: NextFunction) => {
   try {
     const templates = await emailService.getEmailTemplates();
     res.json({ message: 'Email templates retrieved successfully', templates });
@@ -296,7 +299,7 @@ export const getEmailTemplates = asyncHandler(async (req: Request, res: Response
  *
  * @route POST /api/v1/admin/email/templates
  */
-export const createEmailTemplate = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+export const createEmailTemplate = asyncHandler(async (req: Request, res: Response, _next: NextFunction) => {
   try {
     const { name, subject, message } = createEmailTemplateSchema.parse(req.body);
     const created = await emailService.createEmailTemplate({ name, subject, message });
@@ -319,7 +322,7 @@ export const createEmailTemplate = asyncHandler(async (req: Request, res: Respon
  *
  * @route PUT /api/v1/admin/email/templates/:templateId
  */
-export const updateEmailTemplate = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+export const updateEmailTemplate = asyncHandler(async (req: Request, res: Response, _next: NextFunction) => {
   try {
     const { templateId } = emailTemplateIdQuerySchema.parse(req.params);
     const { name, subject, message } = createEmailTemplateSchema.parse(req.body);
@@ -342,7 +345,7 @@ export const updateEmailTemplate = asyncHandler(async (req: Request, res: Respon
  *
  * @route DELETE /api/v1/admin/email/templates/:templateId
  */
-export const deleteEmailTemplate = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+export const deleteEmailTemplate = asyncHandler(async (req: Request, res: Response, _next: NextFunction) => {
   try {
     const { templateId } = emailTemplateIdQuerySchema.parse(req.params);
     const deleted = await emailService.deleteEmailTemplate(templateId);
@@ -363,7 +366,7 @@ export const deleteEmailTemplate = asyncHandler(async (req: Request, res: Respon
  *
  * @route GET /api/v1/admin/email/emails
  */
-export const getEmails = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+export const getEmails = asyncHandler(async (req: Request, res: Response, _next: NextFunction) => {
   try {
     const page = Math.max(1, parseInt(req.query.page as string) || 1);
     const limit = Math.min(100, parseInt(req.query.limit as string) || 50);
@@ -382,7 +385,7 @@ export const getEmails = asyncHandler(async (req: Request, res: Response, next: 
  *
  * @route POST /api/v1/admin/email/emails
  */
-export const sendEmail = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+export const sendEmail = asyncHandler(async (req: Request, res: Response, _next: NextFunction) => {
   try {
     const { subject, message, sendToAll, recipients, scheduledDate, action } = emailSchema.parse(req.body);
     await emailService.sendScheduleOrSaveEmail({
@@ -405,7 +408,7 @@ export const sendEmail = asyncHandler(async (req: Request, res: Response, next: 
  *
  * @route DELETE /api/v1/admin/email/emails/:emailId
  */
-export const deleteEmail = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+export const deleteEmail = asyncHandler(async (req: Request, res: Response, _next: NextFunction) => {
   try {
     const { emailId } = emailIdQuerySchema.parse(req.params);
     const deleted = await emailService.deleteEmail(emailId);

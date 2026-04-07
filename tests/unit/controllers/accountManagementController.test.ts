@@ -1,4 +1,3 @@
-import { mockNext, mockRequest, mockResponse } from '../helpers/mockRequest';
 import {
   accountService,
   adminMovieService,
@@ -46,15 +45,6 @@ jest.mock('@ajgifford/keepwatching-common-server/services', () => ({
 
 describe('AccountManagementController', () => {
   let req: any, res: any, next: jest.Mock;
-
-  const mockAccount = {
-    id: 1,
-    name: 'Test User',
-    email: 'test@example.com',
-    uid: 'test-uid-123',
-    defaultProfileId: 101,
-    image: 'account-image.png',
-  };
 
   beforeEach(() => {
     req = {

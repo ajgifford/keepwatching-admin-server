@@ -1,4 +1,3 @@
-import { getMonthlyPerformanceSummary } from '@controllers/healthController';
 import { describe, expect, it } from '@jest/globals';
 import router from '@routes/healthRouter';
 import express from 'express';

@@ -11,7 +11,8 @@ import path from 'path';
 
 // Regex patterns for log parsing
 const NGINX_LOG_PATTERN = /^(\S+) (\S+) (\S+) \[([^\]]+)\] "([^"]*)" (\d+) (\d+) "([^"]*)" "([^"]*)"$/;
-const WINSTON_LOG_PATTERN = /\[([\w\-]+ [\d:]+)\] (?:\x1b?\[\d+m)?(\w+)(?:\x1b?\s?\[\d+m)? \(([\d\.]+)\): (.+)/;
+// eslint-disable-next-line no-control-regex
+const WINSTON_LOG_PATTERN = /\[([\w-]+ [\d:]+)\] (?:\x1b?\[\d+m)?(\w+)(?:\x1b?\s?\[\d+m)? \(([\d.]+)\): (.+)/;
 const TIMESTAMP_PATTERN = /^\[([A-Za-z]{3}-\d{2}-\d{4} \d{2}:\d{2}:\d{2})\]\s+(\w+):\s*(.*)$/;
 
 /**
@@ -47,7 +48,7 @@ export function parseAppLogLine(line: string, service: LogService, logFile: stri
           }
         : {},
     };
-  } catch (e) {
+  } catch (_e) {
     return null;
   }
 }
@@ -322,7 +323,7 @@ export function normalizeTimestamp(timestamp: string): string {
   // For timestamps that are already in a standard format
   try {
     return new Date(timestamp).toISOString();
-  } catch (error) {
+  } catch (_error) {
     // Fallback: return current time if parsing fails
     return new Date().toISOString();
   }

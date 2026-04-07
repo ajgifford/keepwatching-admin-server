@@ -132,7 +132,7 @@ async function checkServicesHealth(): Promise<ServiceHealth[]> {
 
 async function checkServiceHealth(service: string): Promise<ServiceHealth> {
   return new Promise((resolve, reject) => {
-    let cmd = '';
+    let cmd: string;
     switch (service) {
       case 'nginx':
         cmd = 'systemctl status nginx';

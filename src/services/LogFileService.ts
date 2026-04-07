@@ -95,7 +95,7 @@ export class LogFileService {
     try {
       fs.accessSync(filePath, fs.constants.R_OK);
       return true;
-    } catch (err) {
+    } catch (_err) {
       return false;
     }
   }

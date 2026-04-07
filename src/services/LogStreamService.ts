@@ -120,7 +120,7 @@ export class LogStreamService {
     try {
       JSON.parse(data);
       isCompleteJson = true;
-    } catch (e) {
+    } catch (_e) {
       // Not a complete JSON object
     }
 

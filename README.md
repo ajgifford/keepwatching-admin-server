@@ -200,7 +200,7 @@ yarn pm2:stop:dev
 
 ### PM2 Ecosystem
 
-The `ecosystem.config.js` file configures two PM2 processes:
+The `ecosystem.config.cjs` file configures two PM2 processes:
 
 - **keepwatching-admin-server**: Production (port 3001)
 - **keepwatching-admin-server-dev**: Development with hot reload (port 3001)
@@ -278,7 +278,7 @@ keepwatching-admin-server/
 ├── scripts/                         # Deployment scripts
 ├── certs/                           # SSL certificates
 ├── .env                             # Environment configuration
-├── ecosystem.config.js              # PM2 configuration
+├── ecosystem.config.cjs             # PM2 configuration
 ├── package.json                     # Dependencies and scripts
 └── tsconfig.json                    # TypeScript configuration
 ```

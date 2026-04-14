@@ -12,7 +12,7 @@ const ignores = [
   'eslint.config.mjs',
   'dist/**',
   'jest.config.js',
-  'ecosystem.config.js',
+  'ecosystem.config.cjs',
 ];
 
 export default [

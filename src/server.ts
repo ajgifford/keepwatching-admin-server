@@ -3,6 +3,7 @@ import 'dotenv/config';
 import accountRouter from './routes/accountManagementRouter';
 import adminRouter from './routes/adminRouter';
 import contentRouter from './routes/contentRouter';
+import ratingsAndRecommendationsRouter from './routes/ratingsAndRecommendationsRouter';
 import emailRouter from './routes/emailRouter';
 import healthRouter from './routes/healthRouter';
 import jobsRouter from './routes/jobsRouter';
@@ -83,6 +84,7 @@ const limiter = rateLimit({
 app.use('/api/', limiter);
 app.use(accountRouter);
 app.use(adminRouter);
+app.use(ratingsAndRecommendationsRouter);
 app.use(contentRouter);
 app.use(emailRouter);
 app.use(healthRouter);

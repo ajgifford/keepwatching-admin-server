@@ -53,7 +53,7 @@ describe('AdminController', () => {
             '',
           );
         } else if (cmd.includes('node')) {
-          callback(null, 'user  1234  0.5 1.2 1048576 125952 ?   Ss   Jan01   1:23 node server.js', '');
+          callback(null, 'user  1234  0.5 1.2 1048576 125952 ?   Ss   Jan01   1:23 node server.mjs', '');
         }
       });
 
@@ -73,7 +73,13 @@ describe('AdminController', () => {
         if (cmd.includes('nginx')) {
           callback(null, 'active (running); 5h 30m ago\nMemory: 128.0M\nCPU: 3.2%', '');
         } else if (cmd.includes('pm2')) {
-          callback(null, JSON.stringify([{ pm2_env: { status: 'online', pm_uptime: Date.now() - 3600000 }, monit: { memory: 52428800, cpu: 1.0 } }]), '');
+          callback(
+            null,
+            JSON.stringify([
+              { pm2_env: { status: 'online', pm_uptime: Date.now() - 3600000 }, monit: { memory: 52428800, cpu: 1.0 } },
+            ]),
+            '',
+          );
         } else {
           callback(null, '', '');
         }
@@ -93,7 +99,13 @@ describe('AdminController', () => {
         if (cmd.includes('nginx')) {
           callback(null, 'active (running); 3 weeks 2 days ago\nMemory: 10M\nCPU: 0.5%', '');
         } else if (cmd.includes('pm2')) {
-          callback(null, JSON.stringify([{ pm2_env: { status: 'online', pm_uptime: Date.now() - 1000 }, monit: { memory: 1024, cpu: 0 } }]), '');
+          callback(
+            null,
+            JSON.stringify([
+              { pm2_env: { status: 'online', pm_uptime: Date.now() - 1000 }, monit: { memory: 1024, cpu: 0 } },
+            ]),
+            '',
+          );
         } else {
           callback(null, '', '');
         }
@@ -111,7 +123,13 @@ describe('AdminController', () => {
         if (cmd.includes('nginx')) {
           callback(null, 'active (running)', '');
         } else if (cmd.includes('pm2')) {
-          callback(null, JSON.stringify([{ pm2_env: { status: 'online', pm_uptime: Date.now() - 1000 }, monit: { memory: 1024, cpu: 0 } }]), '');
+          callback(
+            null,
+            JSON.stringify([
+              { pm2_env: { status: 'online', pm_uptime: Date.now() - 1000 }, monit: { memory: 1024, cpu: 0 } },
+            ]),
+            '',
+          );
         } else {
           callback(null, '', '');
         }
@@ -219,10 +237,16 @@ describe('AdminController', () => {
         if (cmd.includes('nginx')) {
           callback(null, 'active (running)', '');
         } else if (cmd.includes('pm2')) {
-          callback(null, JSON.stringify([{ pm2_env: { status: 'online', pm_uptime: Date.now() - 60000 }, monit: { memory: 2048, cpu: 0.1 } }]), '');
+          callback(
+            null,
+            JSON.stringify([
+              { pm2_env: { status: 'online', pm_uptime: Date.now() - 60000 }, monit: { memory: 2048, cpu: 0.1 } },
+            ]),
+            '',
+          );
         } else if (cmd.includes('node')) {
           // ps aux output format: USER PID %CPU %MEM VSZ RSS TTY STAT START TIME COMMAND
-          callback(null, 'deploy  999  1.2  2.5 512000 256000 ? Ss 10:00 0:30 node server.js\n', '');
+          callback(null, 'deploy  999  1.2  2.5 512000 256000 ? Ss 10:00 0:30 node server.mjs\n', '');
         }
       });
 
@@ -240,7 +264,13 @@ describe('AdminController', () => {
         if (cmd.includes('nginx')) {
           callback(null, 'active (running)', '');
         } else if (cmd.includes('pm2')) {
-          callback(null, JSON.stringify([{ pm2_env: { status: 'online', pm_uptime: twoHoursAgo }, monit: { memory: 1048576, cpu: 0.5 } }]), '');
+          callback(
+            null,
+            JSON.stringify([
+              { pm2_env: { status: 'online', pm_uptime: twoHoursAgo }, monit: { memory: 1048576, cpu: 0.5 } },
+            ]),
+            '',
+          );
         } else {
           callback(null, '', '');
         }
@@ -259,7 +289,13 @@ describe('AdminController', () => {
         if (cmd.includes('nginx')) {
           callback(null, 'active (running)', '');
         } else if (cmd.includes('pm2')) {
-          callback(null, JSON.stringify([{ pm2_env: { status: 'online', pm_uptime: threeMinutesAgo }, monit: { memory: 1024, cpu: 0 } }]), '');
+          callback(
+            null,
+            JSON.stringify([
+              { pm2_env: { status: 'online', pm_uptime: threeMinutesAgo }, monit: { memory: 1024, cpu: 0 } },
+            ]),
+            '',
+          );
         } else {
           callback(null, '', '');
         }
@@ -278,7 +314,13 @@ describe('AdminController', () => {
         if (cmd.includes('nginx')) {
           callback(null, 'active (running)', '');
         } else if (cmd.includes('pm2')) {
-          callback(null, JSON.stringify([{ pm2_env: { status: 'online', pm_uptime: thirtySecondsAgo }, monit: { memory: 512, cpu: 0 } }]), '');
+          callback(
+            null,
+            JSON.stringify([
+              { pm2_env: { status: 'online', pm_uptime: thirtySecondsAgo }, monit: { memory: 512, cpu: 0 } },
+            ]),
+            '',
+          );
         } else {
           callback(null, '', '');
         }
@@ -297,7 +339,13 @@ describe('AdminController', () => {
         if (cmd.includes('nginx')) {
           callback(null, 'active (running)', '');
         } else if (cmd.includes('pm2')) {
-          callback(null, JSON.stringify([{ pm2_env: { status: 'online', pm_uptime: twoDaysAgo }, monit: { memory: 2097152, cpu: 1.5 } }]), '');
+          callback(
+            null,
+            JSON.stringify([
+              { pm2_env: { status: 'online', pm_uptime: twoDaysAgo }, monit: { memory: 2097152, cpu: 1.5 } },
+            ]),
+            '',
+          );
         } else {
           callback(null, '', '');
         }
@@ -315,7 +363,13 @@ describe('AdminController', () => {
         if (cmd.includes('nginx')) {
           callback(null, 'active (running)', '');
         } else if (cmd.includes('pm2')) {
-          callback(null, JSON.stringify([{ pm2_env: { status: 'online', pm_uptime: Date.now() - 1000 }, monit: { memory: 512, cpu: 0 } }]), '');
+          callback(
+            null,
+            JSON.stringify([
+              { pm2_env: { status: 'online', pm_uptime: Date.now() - 1000 }, monit: { memory: 512, cpu: 0 } },
+            ]),
+            '',
+          );
         } else {
           callback(null, '', '');
         }
@@ -333,7 +387,13 @@ describe('AdminController', () => {
         if (cmd.includes('nginx')) {
           callback(null, 'active (running)', '');
         } else if (cmd.includes('pm2')) {
-          callback(null, JSON.stringify([{ pm2_env: { status: 'online', pm_uptime: Date.now() - 1000 }, monit: { memory: 2048, cpu: 0 } }]), '');
+          callback(
+            null,
+            JSON.stringify([
+              { pm2_env: { status: 'online', pm_uptime: Date.now() - 1000 }, monit: { memory: 2048, cpu: 0 } },
+            ]),
+            '',
+          );
         } else {
           callback(null, '', '');
         }
@@ -351,7 +411,13 @@ describe('AdminController', () => {
         if (cmd.includes('nginx')) {
           callback(null, 'active (running)', '');
         } else if (cmd.includes('pm2')) {
-          callback(null, JSON.stringify([{ pm2_env: { status: 'online', pm_uptime: Date.now() - 1000 }, monit: { memory: 2147483648, cpu: 0 } }]), '');
+          callback(
+            null,
+            JSON.stringify([
+              { pm2_env: { status: 'online', pm_uptime: Date.now() - 1000 }, monit: { memory: 2147483648, cpu: 0 } },
+            ]),
+            '',
+          );
         } else {
           callback(null, '', '');
         }
@@ -367,7 +433,17 @@ describe('AdminController', () => {
 
   describe('getSummaryCounts', () => {
     it('should return summary counts successfully', async () => {
-      const mockCounts = { accounts: 10, profiles: 20, shows: 50, seasons: 100, episodes: 500, movies: 30, people: 200, favoritedShows: 15, favoritedMovies: 8 };
+      const mockCounts = {
+        accounts: 10,
+        profiles: 20,
+        shows: 50,
+        seasons: 100,
+        episodes: 500,
+        movies: 30,
+        people: 200,
+        favoritedShows: 15,
+        favoritedMovies: 8,
+      };
       jest.mocked(summaryService.getSummaryCounts).mockResolvedValue(mockCounts);
 
       await getSummaryCounts(req, res, next);

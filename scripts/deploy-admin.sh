@@ -301,8 +301,8 @@ perform_deployment() {
   yarn build
 
   # Verify build succeeded
-  if [ ! -d "$PROJECT_ROOT/dist" ] || [ ! -f "$PROJECT_ROOT/dist/server.js" ]; then
-    print_error "Build failed - dist/server.js not found!"
+  if [ ! -d "$PROJECT_ROOT/dist" ] || [ ! -f "$PROJECT_ROOT/dist/server.mjs" ]; then
+    print_error "Build failed - dist/server.mjs not found!"
     print_warning "Rolling back to previous version..."
     restore_backup "$backup_path"
     exit 1

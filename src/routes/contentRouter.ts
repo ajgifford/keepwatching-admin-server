@@ -1,5 +1,6 @@
 import {
   deleteEpisode,
+  deletePerson,
   getDuplicateEpisodes,
   getFullMovieDetails,
   getFullShowDetails,
@@ -7,7 +8,11 @@ import {
   getMovieProfiles,
   getMovies,
   getPeople,
+  getPersonByTmdbId,
   getPersonDetails,
+  mergeAndDeletePerson,
+  getPersonFailure,
+  getPersonFailures,
   getShowDetails,
   getShowProfiles,
   getShowSeasons,
@@ -15,10 +20,12 @@ import {
   getShowsWithDuplicates,
   getShowWatchProgress,
   getShows,
+  resolvePersonFailure,
   updateAllMovies,
   updateAllShows,
   updateMovie,
   updatePerson,
+  updatePersonTmdbId,
   updateShow,
 } from '../controllers/contentController';
 import express from 'express';
@@ -43,8 +50,16 @@ router.get('/api/v1/movies/:movieId/details', getMovieDetails);
 router.get('/api/v1/movies/:movieId/profiles', getMovieProfiles);
 router.post('/api/v1/movies/update', updateMovie);
 router.post('/api/v1/movies/updateAll', updateAllMovies);
+// People — static sub-paths must come before /:personId to avoid route collision
 router.get('/api/v1/people', getPeople);
-router.get('/api/v1/people/:personId', getPersonDetails);
+router.get('/api/v1/people/failures', getPersonFailures);
+router.get('/api/v1/people/failures/:failureId', getPersonFailure);
+router.put('/api/v1/people/failures/:personId/resolve', resolvePersonFailure);
 router.post('/api/v1/people/update', updatePerson);
+router.get('/api/v1/people/by-tmdb/:tmdbId', getPersonByTmdbId);
+router.get('/api/v1/people/:personId', getPersonDetails);
+router.post('/api/v1/people/:personId/merge/:targetPersonId', mergeAndDeletePerson);
+router.delete('/api/v1/people/:personId', deletePerson);
+router.put('/api/v1/people/:personId/tmdb-id', updatePersonTmdbId);
 
 export default router;

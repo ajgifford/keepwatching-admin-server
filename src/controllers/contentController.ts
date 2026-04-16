@@ -254,6 +254,17 @@ export const getPeople = asyncHandler(async (req: Request, res: Response, next: 
   }
 });
 
+// GET /api/v1/people/by-tmdb/:tmdbId
+export const getPersonByTmdbId = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { tmdbId } = req.params;
+    const person = await personService.getPersonByTmdbId(Number(tmdbId));
+    res.status(200).json({ message: person ? 'Person found' : 'Person not found', results: person });
+  } catch (error) {
+    next(error);
+  }
+});
+
 // GET /api/v1/people/:personId
 export const getPersonDetails = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
   try {
@@ -272,6 +283,101 @@ export const updatePerson = asyncHandler(async (req: Request, res: Response, nex
     const { personId, tmdbId } = req.body;
     await personService.updatePerson(Number(personId), Number(tmdbId));
     res.status(200).json({ message: `Person with TMDB Id ${tmdbId} was updated` });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// GET /api/v1/people/failures
+export const getPersonFailures = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const status = req.query.status as 'pending' | 'resolved' | 'removed' | undefined;
+    const page = Math.max(1, parseInt(req.query.page as string) || 1);
+    const limit = Math.min(100, parseInt(req.query.limit as string) || 50);
+    const offset = (page - 1) * limit;
+
+    const [failures, total] = await Promise.all([
+      personService.getPersonFailures(status, limit, offset),
+      personService.getPersonFailureCount(status),
+    ]);
+
+    const totalPages = Math.ceil(total / limit);
+    res.status(200).json({
+      message: `Retrieved page ${page} of person update failures`,
+      pagination: {
+        totalCount: total,
+        totalPages,
+        currentPage: page,
+        limit,
+        hasNextPage: page < totalPages,
+        hasPrevPage: page > 1,
+      },
+      results: failures,
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// GET /api/v1/people/failures/:failureId
+export const getPersonFailure = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { failureId } = req.params;
+    const failure = await personService.getPersonFailureById(Number(failureId));
+    if (!failure) {
+      res.status(404).json({ message: `Person failure with id ${failureId} not found` });
+      return;
+    }
+    res.status(200).json({ message: 'Retrieved person failure', results: failure });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// PUT /api/v1/people/failures/:personId/resolve
+export const resolvePersonFailure = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { personId } = req.params;
+    const { notes } = req.body;
+    await personService.resolvePersonFailure(Number(personId), notes);
+    res.status(200).json({ message: `Person failure for person ${personId} marked as resolved` });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// POST /api/v1/people/:personId/merge/:targetPersonId
+export const mergeAndDeletePerson = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { personId, targetPersonId } = req.params;
+    const result = await personService.mergeAndDeletePerson(Number(personId), Number(targetPersonId));
+    res.status(200).json({
+      message: `Person ${personId} merged into ${targetPersonId} and deleted (shows: ${result.showsMerged}, movies: ${result.moviesMerged})`,
+      results: result,
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// DELETE /api/v1/people/:personId
+export const deletePerson = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { personId } = req.params;
+    await personService.deletePersonAndReferences(Number(personId));
+    res.status(200).json({ message: `Person ${personId} and all references deleted successfully` });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// PUT /api/v1/people/:personId/tmdb-id
+export const updatePersonTmdbId = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { personId } = req.params;
+    const { newTmdbId } = req.body;
+    const result = await personService.updatePersonTmdbId(Number(personId), Number(newTmdbId));
+    res.status(200).json({ message: `Person ${personId} TMDB ID updated to ${newTmdbId}`, results: result });
   } catch (error) {
     next(error);
   }

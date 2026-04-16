@@ -1,5 +1,4 @@
-import { describe, expect, it, jest, beforeEach, afterEach } from '@jest/globals';
-import { getCurrentDate, formatLogDate } from '@utils/dateHelpers';
+import { formatLogDate, getCurrentDate } from '@utils/dateHelpers';
 
 describe('dateHelpers', () => {
   describe('getCurrentDate', () => {

@@ -1,20 +1,19 @@
+import { accountStatisticsService } from '@ajgifford/keepwatching-common-server/services';
 import {
-  getAccountStatistics,
-  getAccountWatchingVelocity,
+  getAccountAbandonmentRiskStats,
   getAccountActivityTimeline,
   getAccountBingeWatchingStats,
-  getAccountWatchStreakStats,
-  getAccountTimeToWatchStats,
-  getAccountSeasonalViewingStats,
-  getAccountMilestoneStats,
   getAccountContentDepthStats,
   getAccountContentDiscoveryStats,
-  getAccountAbandonmentRiskStats,
+  getAccountMilestoneStats,
+  getAccountSeasonalViewingStats,
+  getAccountStatistics,
+  getAccountTimeToWatchStats,
   getAccountUnairedContentStats,
+  getAccountWatchStreakStats,
+  getAccountWatchingVelocity,
   getProfileComparison,
 } from '@controllers/accountStatisticsController';
-import { accountStatisticsService } from '@ajgifford/keepwatching-common-server/services';
-import { beforeEach, describe, expect, it } from '@jest/globals';
 
 jest.mock('@ajgifford/keepwatching-common-server/services', () => ({
   accountStatisticsService: {

@@ -1,5 +1,4 @@
 import { LogEntry, LogFilter, LogLevel, LogService } from '@ajgifford/keepwatching-types';
-import { describe, expect, it } from '@jest/globals';
 import { determineLogLevel, filterLogs, limitLogs, matchesFilter, sortLogsByTimestamp } from '@utils/logFilters';
 
 describe('logFilters', () => {

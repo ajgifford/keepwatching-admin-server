@@ -1,5 +1,4 @@
 import { LogService } from '@ajgifford/keepwatching-types';
-import { beforeEach, describe, expect, it, jest } from '@jest/globals';
 import { LogFileService } from '@services/LogFileService';
 import fs from 'fs';
 
@@ -34,7 +33,7 @@ describe('LogFileService', () => {
     it('should read and return file content', () => {
       const mockContent = 'log file content';
       mockFs.accessSync = jest.fn();
-      mockFs.readFileSync = jest.fn(() => mockContent as any);
+      mockFs.readFileSync = jest.fn().mockReturnValue(mockContent);
 
       const result = service.readLogFile('/path/to/log.log');
 
@@ -43,7 +42,7 @@ describe('LogFileService', () => {
     });
 
     it('should return empty string if file does not exist', () => {
-      mockFs.accessSync = jest.fn(() => {
+      mockFs.accessSync = jest.fn().mockImplementation(() => {
         throw new Error('File not found');
       });
 
@@ -55,7 +54,7 @@ describe('LogFileService', () => {
 
     it('should return empty string if read fails', () => {
       mockFs.accessSync = jest.fn();
-      mockFs.readFileSync = jest.fn(() => {
+      mockFs.readFileSync = jest.fn().mockImplementation(() => {
         throw new Error('Read failed');
       });
 
@@ -73,8 +72,8 @@ describe('LogFileService', () => {
         'keepwatching-January-13-2025.log',
       ];
 
-      mockFs.readdirSync = jest.fn(() => mockFiles as any);
-      mockFs.statSync = jest.fn((filePath: any) => {
+      mockFs.readdirSync = jest.fn().mockReturnValue(mockFiles);
+      jest.spyOn(fs, 'statSync').mockImplementation((filePath: any) => {
         const fileName = filePath.split('/').pop();
         const day = parseInt(fileName.match(/\d+/)?.[0] || '0');
         return { mtime: new Date(2025, 0, day) } as any;
@@ -95,8 +94,8 @@ describe('LogFileService', () => {
         'keepwatching-January-14-2025.log',
       ];
 
-      mockFs.readdirSync = jest.fn(() => mockFiles as any);
-      mockFs.statSync = jest.fn(() => ({ mtime: new Date() }) as any);
+      mockFs.readdirSync = jest.fn().mockReturnValue(mockFiles);
+      jest.spyOn(fs, 'statSync').mockReturnValue({ mtime: new Date() } as any);
 
       const result = service.findRotatingLogs('/var/log/keepwatching-January-15-2025.log');
 
@@ -105,7 +104,7 @@ describe('LogFileService', () => {
     });
 
     it('should return empty array on error', () => {
-      mockFs.readdirSync = jest.fn(() => {
+      mockFs.readdirSync = jest.fn().mockImplementation(() => {
         throw new Error('Directory not found');
       });
 
@@ -121,8 +120,8 @@ describe('LogFileService', () => {
         'keepwatching-January-14-2025.log',
       ];
 
-      mockFs.readdirSync = jest.fn(() => mockFiles as any);
-      mockFs.statSync = jest.fn(() => ({ mtime: new Date() }) as any);
+      mockFs.readdirSync = jest.fn().mockReturnValue(mockFiles);
+      jest.spyOn(fs, 'statSync').mockReturnValue({ mtime: new Date() } as any);
 
       const result = service.findRotatingLogs('/var/log/keepwatching-January-15-2025.log');
 
@@ -135,8 +134,8 @@ describe('LogFileService', () => {
     it('should return the latest rotating log', () => {
       const mockFiles = ['keepwatching-January-15-2025.log', 'keepwatching-January-14-2025.log'];
 
-      mockFs.readdirSync = jest.fn(() => mockFiles as any);
-      mockFs.statSync = jest.fn((filePath: any) => {
+      mockFs.readdirSync = jest.fn().mockReturnValue(mockFiles);
+      jest.spyOn(fs, 'statSync').mockImplementation((filePath: any) => {
         const fileName = filePath.split('/').pop();
         const day = parseInt(fileName.match(/\d+/)?.[0] || '0');
         return { mtime: new Date(2025, 0, day) } as any;
@@ -148,7 +147,7 @@ describe('LogFileService', () => {
     });
 
     it('should return null if no logs found', () => {
-      mockFs.readdirSync = jest.fn(() => [] as any);
+      mockFs.readdirSync = jest.fn().mockReturnValue([]);
 
       const result = service.findLatestRotatingLog('/var/log/keepwatching-January-15-2025.log');
 
@@ -156,7 +155,7 @@ describe('LogFileService', () => {
     });
 
     it('should return null on error', () => {
-      mockFs.readdirSync = jest.fn(() => {
+      mockFs.readdirSync = jest.fn().mockImplementation(() => {
         throw new Error('Directory not found');
       });
 
@@ -177,7 +176,7 @@ describe('LogFileService', () => {
     });
 
     it('should return false if file does not exist', () => {
-      mockFs.accessSync = jest.fn(() => {
+      mockFs.accessSync = jest.fn().mockImplementation(() => {
         throw new Error('File not found');
       });
 
@@ -187,7 +186,7 @@ describe('LogFileService', () => {
     });
 
     it('should return false if file is not readable', () => {
-      mockFs.accessSync = jest.fn(() => {
+      mockFs.accessSync = jest.fn().mockImplementation(() => {
         throw new Error('Permission denied');
       });
 
@@ -200,8 +199,8 @@ describe('LogFileService', () => {
   describe('getLogFilePaths', () => {
     beforeEach(() => {
       // Setup default mocks for rotating log functionality
-      mockFs.readdirSync = jest.fn(() => ['keepwatching-January-15-2025.log'] as any);
-      mockFs.statSync = jest.fn(() => ({ mtime: new Date() }) as any);
+      mockFs.readdirSync = jest.fn().mockReturnValue(['keepwatching-January-15-2025.log']);
+      jest.spyOn(fs, 'statSync').mockReturnValue({ mtime: new Date() } as any);
     });
 
     it('should return default log file paths', () => {
@@ -217,8 +216,8 @@ describe('LogFileService', () => {
     it('should use latest rotating log for KeepWatching-App', () => {
       const mockFiles = ['keepwatching-January-16-2025.log', 'keepwatching-January-15-2025.log'];
 
-      mockFs.readdirSync = jest.fn(() => mockFiles as any);
-      mockFs.statSync = jest.fn((filePath: any) => {
+      mockFs.readdirSync = jest.fn().mockReturnValue(mockFiles);
+      jest.spyOn(fs, 'statSync').mockImplementation((filePath: any) => {
         const day = filePath.includes('16') ? 16 : 15;
         return { mtime: new Date(2025, 0, day) } as any;
       });
@@ -235,8 +234,8 @@ describe('LogFileService', () => {
         'keepwatching-January-13-2025.log',
       ];
 
-      mockFs.readdirSync = jest.fn(() => mockFiles as any);
-      mockFs.statSync = jest.fn(() => ({ mtime: new Date() }) as any);
+      mockFs.readdirSync = jest.fn().mockReturnValue(mockFiles);
+      jest.spyOn(fs, 'statSync').mockReturnValue({ mtime: new Date() } as any);
 
       const result = service.getLogFilePaths({
         startDate: '2025-01-13T00:00:00Z',
@@ -250,8 +249,8 @@ describe('LogFileService', () => {
     it('should not include additional rotating logs without date filters', () => {
       const mockFiles = ['keepwatching-January-15-2025.log', 'keepwatching-January-14-2025.log'];
 
-      mockFs.readdirSync = jest.fn(() => mockFiles as any);
-      mockFs.statSync = jest.fn(() => ({ mtime: new Date() }) as any);
+      mockFs.readdirSync = jest.fn().mockReturnValue(mockFiles);
+      jest.spyOn(fs, 'statSync').mockReturnValue({ mtime: new Date() } as any);
 
       const result = service.getLogFilePaths();
 

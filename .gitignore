@@ -140,3 +140,4 @@ dist
 .deployments/
 
 .clineignore
+test-report.html

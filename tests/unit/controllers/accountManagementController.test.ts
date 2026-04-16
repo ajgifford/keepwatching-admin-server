@@ -17,7 +17,6 @@ import {
   getProfiles,
   verifyEmail,
 } from '@controllers/accountManagementController';
-import { beforeEach, describe, expect, it } from '@jest/globals';
 
 jest.mock('@ajgifford/keepwatching-common-server/services', () => ({
   accountService: {

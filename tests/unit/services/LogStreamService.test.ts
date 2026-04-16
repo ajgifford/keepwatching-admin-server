@@ -1,9 +1,10 @@
 import { LogLevel, LogService } from '@ajgifford/keepwatching-types';
-import { beforeEach, describe, expect, it, jest } from '@jest/globals';
-import { LogStreamService } from '@services/LogStreamService';
 import { LogFileService } from '@services/LogFileService';
-import { Request, Response } from 'express';
+import { LogStreamService } from '@services/LogStreamService';
 import { EventEmitter } from 'events';
+import { Request, Response } from 'express';
+// Import Tail to mock it
+import { Tail } from 'tail';
 
 // Mock dependencies
 jest.mock('@ajgifford/keepwatching-common-server/logger', () => ({
@@ -27,13 +28,13 @@ jest.mock('@utils/logFilters', () => ({
 // Create a mock Tail class that extends EventEmitter
 class MockTail extends EventEmitter {
   unwatch = jest.fn();
-  constructor(public filePath: string, public options: any) {
+  constructor(
+    public filePath: string,
+    public options: any,
+  ) {
     super();
   }
 }
-
-// Import Tail to mock it
-import { Tail } from 'tail';
 
 describe('LogStreamService', () => {
   let service: LogStreamService;
@@ -75,7 +76,7 @@ describe('LogStreamService', () => {
     mockRequest = Object.assign(requestEmitter, {
       method: 'GET',
       url: '/api/logs/stream',
-    });
+    }) as unknown as Partial<Request>;
 
     // Create mock response
     mockResponse = {
@@ -113,7 +114,7 @@ describe('LogStreamService', () => {
       expect(Tail).toHaveBeenCalledTimes(4);
       expect(Tail).toHaveBeenCalledWith(
         '/var/log/express/keepwatching-January-15-2025.log',
-        expect.objectContaining({ follow: true })
+        expect.objectContaining({ follow: true }),
       );
     });
 
@@ -139,9 +140,9 @@ describe('LogStreamService', () => {
 
     it('should handle file existence check correctly', () => {
       mockLogFileService.fileExists
-        .mockReturnValueOnce(true)  // KeepWatching-App
+        .mockReturnValueOnce(true) // KeepWatching-App
         .mockReturnValueOnce(false) // KeepWatching-App-Error
-        .mockReturnValueOnce(true)  // KeepWatching-Console
+        .mockReturnValueOnce(true) // KeepWatching-Console
         .mockReturnValueOnce(false); // nginx
 
       service.streamLogs(mockRequest as Request, mockResponse as Response);
@@ -175,10 +176,10 @@ describe('LogStreamService', () => {
       service.streamLogs(mockRequest as Request, mockResponse as Response);
 
       const writtenContent = writtenData.join('');
-      const entries = writtenContent.split('data: ').filter(d => d.trim());
+      const entries = writtenContent.split('data: ').filter((d) => d.trim());
 
       // Find the nginx not found entry
-      const nginxEntry = entries.find(e => e.includes('nginx'));
+      const nginxEntry = entries.find((e) => e.includes('nginx'));
       expect(nginxEntry).toBeDefined();
       const parsed = JSON.parse(nginxEntry!.split('\n\n')[0]);
       expect(parsed.level).toBe(LogLevel.WARN);
@@ -206,7 +207,7 @@ describe('LogStreamService', () => {
       mockTail.emit('line', jsonLog);
 
       const writtenContent = writtenData.join('');
-      const dataLines = writtenContent.split('data: ').filter(d => d.trim());
+      const dataLines = writtenContent.split('data: ').filter((d) => d.trim());
       const logEntry = JSON.parse(dataLines[0].split('\n\n')[0]);
 
       // The JSON log should be wrapped in a LogEntry with the original JSON as the message
@@ -337,7 +338,7 @@ describe('LogStreamService', () => {
       mockTail.emit('line', '    }');
 
       const writtenContent = writtenData.join('');
-      const dataLines = writtenContent.split('data: ').filter(d => d.trim());
+      const dataLines = writtenContent.split('data: ').filter((d) => d.trim());
       const logEntry = JSON.parse(dataLines[0].split('\n\n')[0]);
 
       // All patterns should be in the combined message
@@ -355,7 +356,7 @@ describe('LogStreamService', () => {
 
       // Closing brace should trigger immediate send
       const writtenContent = writtenData.join('');
-      const dataLines = writtenContent.split('data: ').filter(d => d.trim());
+      const dataLines = writtenContent.split('data: ').filter((d) => d.trim());
       const logEntry = JSON.parse(dataLines[0].split('\n\n')[0]);
 
       expect(logEntry.message).toContain('Error: Test error');
@@ -401,7 +402,7 @@ describe('LogStreamService', () => {
       jest.advanceTimersByTime(500);
 
       const writtenContent = writtenData.join('');
-      const dataLines = writtenContent.split('data: ').filter(d => d.trim());
+      const dataLines = writtenContent.split('data: ').filter((d) => d.trim());
       const errorEntry = JSON.parse(dataLines[0].split('\n\n')[0]);
 
       expect(errorEntry.level).toBe(LogLevel.ERROR);
@@ -433,7 +434,7 @@ describe('LogStreamService', () => {
       mockTail.emit('line', 'Test log');
 
       const writtenContent = writtenData.join('');
-      const dataLines = writtenContent.split('data: ').filter(d => d.trim());
+      const dataLines = writtenContent.split('data: ').filter((d) => d.trim());
       const logEntry = JSON.parse(dataLines[0].split('\n\n')[0]);
 
       expect(logEntry.service).toBe(LogService.APP);
@@ -445,7 +446,7 @@ describe('LogStreamService', () => {
       const afterTime = new Date().toISOString();
 
       const writtenContent = writtenData.join('');
-      const dataLines = writtenContent.split('data: ').filter(d => d.trim());
+      const dataLines = writtenContent.split('data: ').filter((d) => d.trim());
       const logEntry = JSON.parse(dataLines[0].split('\n\n')[0]);
 
       expect(logEntry.timestamp).toBeDefined();
@@ -457,7 +458,7 @@ describe('LogStreamService', () => {
       mockTail.emit('line', 'Test log');
 
       const writtenContent = writtenData.join('');
-      const dataLines = writtenContent.split('data: ').filter(d => d.trim());
+      const dataLines = writtenContent.split('data: ').filter((d) => d.trim());
       const logEntry = JSON.parse(dataLines[0].split('\n\n')[0]);
 
       expect(logEntry.logFile).toBe('keepwatching-January-15-2025.log');

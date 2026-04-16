@@ -1,4 +1,3 @@
-import { describe, expect, it } from '@jest/globals';
 import router from '@routes/statisticsRouter';
 import express from 'express';
 import request from 'supertest';
@@ -27,9 +26,7 @@ jest.mock('@routes/statistics/adminStatisticsRouter', () => {
   // eslint-disable-next-line @typescript-eslint/no-require-imports
   const express = require('express');
   const r = express.Router();
-  r.get('/api/v1/admin/statistics/dashboard', (_req: any, res: any) =>
-    res.status(200).send('admin statistics router'),
-  );
+  r.get('/api/v1/admin/statistics/dashboard', (_req: any, res: any) => res.status(200).send('admin statistics router'));
   return { default: r, __esModule: true };
 });
 

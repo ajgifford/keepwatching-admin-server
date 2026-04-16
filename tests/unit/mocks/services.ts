@@ -1,64 +1,62 @@
-import { jest } from '@jest/globals';
-
 // Mock implementations for services from @ajgifford/keepwatching-common-server
 export const mockAccountService = {
-  getAccounts: jest.fn<any>(),
-  editAccount: jest.fn<any>(),
-  deleteAccount: jest.fn<any>(),
-  getCombinedAccountByEmail: jest.fn<any>(),
-  verifyEmail: jest.fn<any>(),
+  getAccounts: jest.fn(),
+  editAccount: jest.fn(),
+  deleteAccount: jest.fn(),
+  getCombinedAccountByEmail: jest.fn(),
+  verifyEmail: jest.fn(),
 };
 
 export const mockProfileService = {
-  getAdminProfilesByAccount: jest.fn<any>(),
-  updateProfileName: jest.fn<any>(),
-  deleteProfile: jest.fn<any>(),
+  getAdminProfilesByAccount: jest.fn(),
+  updateProfileName: jest.fn(),
+  deleteProfile: jest.fn(),
 };
 
 export const mockNotificationsService = {
-  getAllNotifications: jest.fn<any>(),
-  addNotification: jest.fn<any>(),
-  updateNotification: jest.fn<any>(),
-  deleteNotification: jest.fn<any>(),
+  getAllNotifications: jest.fn(),
+  addNotification: jest.fn(),
+  updateNotification: jest.fn(),
+  deleteNotification: jest.fn(),
 };
 
 export const mockEmailService = {
-  sendEmail: jest.fn<any>(),
+  sendEmail: jest.fn(),
 };
 
 export const mockContentService = {
-  getShows: jest.fn<any>(),
-  getMovies: jest.fn<any>(),
-  searchContent: jest.fn<any>(),
+  getShows: jest.fn(),
+  getMovies: jest.fn(),
+  searchContent: jest.fn(),
 };
 
 export const mockAdminShowService = {
-  getAllShowsByProfile: jest.fn<any>(),
+  getAllShowsByProfile: jest.fn(),
 };
 
 export const mockAdminMovieService = {
-  getAllMoviesByProfile: jest.fn<any>(),
+  getAllMoviesByProfile: jest.fn(),
 };
 
 export const mockPreferencesService = {
-  getAccountPreferences: jest.fn<any>(),
+  getAccountPreferences: jest.fn(),
 };
 
 export const mockLogService = {
-  getLogs: jest.fn<any>(),
-  getLogFiles: jest.fn<any>(),
+  getLogs: jest.fn(),
+  getLogFiles: jest.fn(),
 };
 
 export const mockServicesService = {
-  getServices: jest.fn<any>(),
-  getServiceById: jest.fn<any>(),
-  addService: jest.fn<any>(),
-  updateService: jest.fn<any>(),
-  deleteService: jest.fn<any>(),
+  getServices: jest.fn(),
+  getServiceById: jest.fn(),
+  addService: jest.fn(),
+  updateService: jest.fn(),
+  deleteService: jest.fn(),
 };
 
 export const mockStatisticsService = {
-  getAccountStatistics: jest.fn<any>(),
-  getProfileStatistics: jest.fn<any>(),
-  getAdminStatistics: jest.fn<any>(),
+  getAccountStatistics: jest.fn(),
+  getProfileStatistics: jest.fn(),
+  getAdminStatistics: jest.fn(),
 };

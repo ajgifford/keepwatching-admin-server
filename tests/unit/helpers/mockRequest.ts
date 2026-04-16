@@ -1,12 +1,13 @@
-import { jest } from '@jest/globals';
-import { Request, Response, NextFunction } from 'express';
+import { NextFunction, Request, Response } from 'express';
 
-export const mockRequest = (options: {
-  params?: Record<string, any>;
-  query?: Record<string, any>;
-  body?: Record<string, any>;
-  headers?: Record<string, any>;
-} = {}): Partial<Request> => {
+export const mockRequest = (
+  options: {
+    params?: Record<string, any>;
+    query?: Record<string, any>;
+    body?: Record<string, any>;
+    headers?: Record<string, any>;
+  } = {},
+): Partial<Request> => {
   return {
     params: options.params || {},
     query: options.query || {},
@@ -17,14 +18,14 @@ export const mockRequest = (options: {
 
 export const mockResponse = (): Partial<Response> => {
   const res: Partial<Response> = {
-    status: jest.fn<any>().mockReturnThis(),
-    json: jest.fn<any>().mockReturnThis(),
-    send: jest.fn<any>().mockReturnThis(),
-    sendStatus: jest.fn<any>().mockReturnThis(),
+    status: jest.fn().mockReturnThis(),
+    json: jest.fn().mockReturnThis(),
+    send: jest.fn().mockReturnThis(),
+    sendStatus: jest.fn().mockReturnThis(),
   };
   return res;
 };
 
 export const mockNext = (): NextFunction => {
-  return jest.fn<any>() as NextFunction;
+  return jest.fn() as NextFunction;
 };

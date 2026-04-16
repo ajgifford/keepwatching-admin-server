@@ -1,16 +1,15 @@
 import {
-  deleteRating,
-  deleteRecommendation,
-  getContentRatingSummary,
-  getRecommendationsWithAttribution,
-  getRatings,
-  getTopRecommendedContent,
-} from '@controllers/ratingsAndRecommendationsController';
-import {
   adminCommunityRecommendationsService,
   adminRatingsService,
 } from '@ajgifford/keepwatching-common-server/services';
-import { beforeEach, describe, expect, it } from '@jest/globals';
+import {
+  deleteRating,
+  deleteRecommendation,
+  getContentRatingSummary,
+  getRatings,
+  getRecommendationsWithAttribution,
+  getTopRecommendedContent,
+} from '@controllers/ratingsAndRecommendationsController';
 
 jest.mock('@ajgifford/keepwatching-common-server/services', () => ({
   adminRatingsService: {

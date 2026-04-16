@@ -1,13 +1,12 @@
-import { describe, expect, it, jest } from '@jest/globals';
 import { LogLevel, LogService } from '@ajgifford/keepwatching-types';
 import {
+  normalizeTimestamp,
   parseAppLogLine,
-  parseNginxLogLine,
   parseConsoleLogLine,
   parseErrorLogFile,
-  parseLogTimestamp,
-  normalizeTimestamp,
   parseLogFile,
+  parseLogTimestamp,
+  parseNginxLogLine,
 } from '@utils/logParsers';
 
 // Mock cliLogger to suppress output during tests
@@ -184,8 +183,7 @@ describe('logParsers', () => {
     });
 
     it('should handle hyphen for missing user', () => {
-      const line =
-        '10.0.0.1 - - [15/Jan/2025:12:00:00 -0500] "POST /api/data HTTP/1.1" 201 512 "-" "curl/7.68.0"';
+      const line = '10.0.0.1 - - [15/Jan/2025:12:00:00 -0500] "POST /api/data HTTP/1.1" 201 512 "-" "curl/7.68.0"';
 
       const result = parseNginxLogLine(line, 'access.log');
 
@@ -195,8 +193,7 @@ describe('logParsers', () => {
     });
 
     it('should normalize timestamp', () => {
-      const line =
-        '192.168.1.1 - - [02/Jul/2025:02:13:02 -0500] "GET / HTTP/1.1" 200 100 "-" "-"';
+      const line = '192.168.1.1 - - [02/Jul/2025:02:13:02 -0500] "GET / HTTP/1.1" 200 100 "-" "-"';
 
       const result = parseNginxLogLine(line, 'access.log');
 
@@ -226,8 +223,7 @@ describe('logParsers', () => {
     });
 
     it('should use basename of log file', () => {
-      const line =
-        '192.168.1.1 - - [15/Jan/2025:12:00:00 -0500] "GET / HTTP/1.1" 200 100 "-" "-"';
+      const line = '192.168.1.1 - - [15/Jan/2025:12:00:00 -0500] "GET / HTTP/1.1" 200 100 "-" "-"';
       const result = parseNginxLogLine(line, '/var/log/nginx/access.log');
       expect(result?.logFile).toBe('access.log');
     });

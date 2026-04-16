@@ -1,11 +1,10 @@
+import { notificationsService } from '@ajgifford/keepwatching-common-server/services';
 import {
   addNotification,
   deleteNotification,
   getAllNotifications,
   updateNotification,
 } from '@controllers/notificationController';
-import { notificationsService } from '@ajgifford/keepwatching-common-server/services';
-import { beforeEach, describe, expect, it } from '@jest/globals';
 import { z } from 'zod';
 
 jest.mock('@ajgifford/keepwatching-common-server/services', () => ({
@@ -207,8 +206,12 @@ describe('NotificationController', () => {
     });
 
     it('should re-throw ZodError as BadRequestError when parse throws ZodError', async () => {
-      const zodError = new z.ZodError([{ code: 'custom', message: 'Invalid notification ID', path: ['notificationId'] }]);
-      mockNotificationIdParamParse.mockImplementation(() => { throw zodError; });
+      const zodError = new z.ZodError([
+        { code: 'custom', message: 'Invalid notification ID', path: ['notificationId'] },
+      ]);
+      mockNotificationIdParamParse.mockImplementation(() => {
+        throw zodError;
+      });
 
       await deleteNotification(req, res, next);
 
@@ -240,7 +243,9 @@ describe('NotificationController', () => {
 
     it('addNotification should re-throw ZodError as BadRequestError', async () => {
       const zodError = new z.ZodError([{ code: 'custom', message: 'Invalid body field', path: ['title'] }]);
-      mockNotificationBodyParse.mockImplementation(() => { throw zodError; });
+      mockNotificationBodyParse.mockImplementation(() => {
+        throw zodError;
+      });
 
       await addNotification(req, res, next);
 
@@ -251,7 +256,9 @@ describe('NotificationController', () => {
 
     it('updateNotification should re-throw ZodError as BadRequestError', async () => {
       const zodError = new z.ZodError([{ code: 'custom', message: 'Invalid update field', path: ['message'] }]);
-      mockNotificationIdParamParse.mockImplementation(() => { throw zodError; });
+      mockNotificationIdParamParse.mockImplementation(() => {
+        throw zodError;
+      });
 
       await updateNotification(req, res, next);
 

@@ -13,16 +13,15 @@ import {
   getShowProfiles,
   getShowSeasons,
   getShowSeasonsAndEpisodes,
-  getShowsWithDuplicates,
   getShowWatchProgress,
   getShows,
+  getShowsWithDuplicates,
   updateAllMovies,
   updateAllShows,
   updateMovie,
   updatePerson,
   updateShow,
 } from '@controllers/contentController';
-import { beforeEach, describe, expect, it } from '@jest/globals';
 
 jest.mock('@ajgifford/keepwatching-common-server/services', () => ({
   adminMovieService: {

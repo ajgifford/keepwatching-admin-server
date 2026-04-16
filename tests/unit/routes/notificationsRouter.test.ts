@@ -1,4 +1,3 @@
-import { describe, expect, it } from '@jest/globals';
 import router from '@routes/notificationsRouter';
 import express from 'express';
 import request from 'supertest';

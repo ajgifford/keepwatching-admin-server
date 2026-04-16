@@ -1,17 +1,16 @@
+import { adminStatisticsService } from '@ajgifford/keepwatching-common-server/services';
 import {
+  backfillAchievements,
+  getAccountHealth,
+  getAccountHealthMetrics,
+  getAccountRankings,
+  getAdminDashboard,
+  getContentEngagement,
+  getContentPopularity,
   getPlatformOverview,
   getPlatformTrends,
-  getAccountRankings,
-  getAccountHealthMetrics,
-  getAccountHealth,
-  getContentPopularity,
   getTrendingContent,
-  getContentEngagement,
-  getAdminDashboard,
-  backfillAchievements,
 } from '@controllers/adminStatisticsController';
-import { adminStatisticsService } from '@ajgifford/keepwatching-common-server/services';
-import { beforeEach, describe, expect, it } from '@jest/globals';
 
 jest.mock('@ajgifford/keepwatching-common-server/services', () => ({
   adminStatisticsService: {

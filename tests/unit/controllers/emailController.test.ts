@@ -1,21 +1,20 @@
+import { isEmailEnabled } from '@ajgifford/keepwatching-common-server/config';
+import { cliLogger } from '@ajgifford/keepwatching-common-server/logger';
+import { emailService } from '@ajgifford/keepwatching-common-server/services';
 import {
+  createEmailTemplate,
+  deleteEmail,
+  deleteEmailTemplate,
+  getEmailTemplates,
+  getEmails,
+  previewWeeklyEmailByAccount,
+  sendEmail,
   sendWeeklyDigestEmailByAccount,
   sendWeeklyDiscoverEmailByAccount,
   sendWeeklyEmailByAccount,
-  previewWeeklyEmailByAccount,
   sendWeeklyEmailToAll,
-  getEmailTemplates,
-  createEmailTemplate,
   updateEmailTemplate,
-  deleteEmailTemplate,
-  getEmails,
-  sendEmail,
-  deleteEmail,
 } from '@controllers/emailController';
-import { emailService } from '@ajgifford/keepwatching-common-server/services';
-import { isEmailEnabled } from '@ajgifford/keepwatching-common-server/config';
-import { cliLogger } from '@ajgifford/keepwatching-common-server/logger';
-import { beforeEach, describe, expect, it, jest } from '@jest/globals';
 
 jest.mock('@ajgifford/keepwatching-common-server/services', () => ({
   emailService: {

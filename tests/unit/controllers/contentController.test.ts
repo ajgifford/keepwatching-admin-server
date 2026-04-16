@@ -1,6 +1,7 @@
 import { adminMovieService, adminShowService, personService } from '@ajgifford/keepwatching-common-server/services';
 import {
   deleteEpisode,
+  deletePerson,
   getDuplicateEpisodes,
   getFullMovieDetails,
   getFullShowDetails,
@@ -8,7 +9,10 @@ import {
   getMovieProfiles,
   getMovies,
   getPeople,
+  getPersonByTmdbId,
   getPersonDetails,
+  getPersonFailure,
+  getPersonFailures,
   getShowDetails,
   getShowProfiles,
   getShowSeasons,
@@ -16,10 +20,13 @@ import {
   getShowWatchProgress,
   getShows,
   getShowsWithDuplicates,
+  mergeAndDeletePerson,
+  resolvePersonFailure,
   updateAllMovies,
   updateAllShows,
   updateMovie,
   updatePerson,
+  updatePersonTmdbId,
   updateShow,
 } from '@controllers/contentController';
 
@@ -50,8 +57,16 @@ jest.mock('@ajgifford/keepwatching-common-server/services', () => ({
   },
   personService: {
     getPersons: jest.fn(),
+    getPersonByTmdbId: jest.fn(),
     getPersonDetails: jest.fn(),
     updatePerson: jest.fn(),
+    getPersonFailures: jest.fn(),
+    getPersonFailureCount: jest.fn(),
+    getPersonFailureById: jest.fn(),
+    resolvePersonFailure: jest.fn(),
+    mergeAndDeletePerson: jest.fn(),
+    deletePersonAndReferences: jest.fn(),
+    updatePersonTmdbId: jest.fn(),
   },
 }));
 
@@ -912,6 +927,314 @@ describe('ContentController', () => {
       req.params = { showId: '10', episodeId: '101' };
 
       await deleteEpisode(req, res, next);
+
+      expect(next).toHaveBeenCalledWith(error);
+      expect(res.status).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('getPersonByTmdbId', () => {
+    it('should return the person when found', async () => {
+      const mockPerson = { id: 1, tmdbId: 12345, name: 'Test Person' };
+      (personService.getPersonByTmdbId as jest.Mock).mockResolvedValue(mockPerson);
+
+      req.params = { tmdbId: '12345' };
+
+      await getPersonByTmdbId(req, res, next);
+
+      expect(personService.getPersonByTmdbId).toHaveBeenCalledWith(12345);
+      expect(res.status).toHaveBeenCalledWith(200);
+      expect(res.json).toHaveBeenCalledWith({ message: 'Person found', results: mockPerson });
+    });
+
+    it('should return "Person not found" message when result is null', async () => {
+      (personService.getPersonByTmdbId as jest.Mock).mockResolvedValue(null);
+
+      req.params = { tmdbId: '99999' };
+
+      await getPersonByTmdbId(req, res, next);
+
+      expect(personService.getPersonByTmdbId).toHaveBeenCalledWith(99999);
+      expect(res.status).toHaveBeenCalledWith(200);
+      expect(res.json).toHaveBeenCalledWith({ message: 'Person not found', results: null });
+    });
+
+    it('should call next with error when service throws', async () => {
+      const error = new Error('Database error');
+      (personService.getPersonByTmdbId as jest.Mock).mockRejectedValue(error);
+
+      req.params = { tmdbId: '1' };
+
+      await getPersonByTmdbId(req, res, next);
+
+      expect(next).toHaveBeenCalledWith(error);
+      expect(res.status).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('getPersonFailures', () => {
+    it('should return paginated person failures with default parameters', async () => {
+      const mockFailures = [{ id: 1, personId: 10, status: 'pending' }];
+      (personService.getPersonFailures as jest.Mock).mockResolvedValue(mockFailures);
+      (personService.getPersonFailureCount as jest.Mock).mockResolvedValue(1);
+
+      req.query = {};
+
+      await getPersonFailures(req, res, next);
+
+      expect(personService.getPersonFailures).toHaveBeenCalledWith(undefined, 50, 0);
+      expect(personService.getPersonFailureCount).toHaveBeenCalledWith(undefined);
+      expect(res.status).toHaveBeenCalledWith(200);
+      expect(res.json).toHaveBeenCalledWith({
+        message: 'Retrieved page 1 of person update failures',
+        pagination: {
+          totalCount: 1,
+          totalPages: 1,
+          currentPage: 1,
+          limit: 50,
+          hasNextPage: false,
+          hasPrevPage: false,
+        },
+        results: mockFailures,
+      });
+    });
+
+    it('should filter by status when provided', async () => {
+      const mockFailures = [{ id: 2, personId: 20, status: 'resolved' }];
+      (personService.getPersonFailures as jest.Mock).mockResolvedValue(mockFailures);
+      (personService.getPersonFailureCount as jest.Mock).mockResolvedValue(1);
+
+      req.query = { status: 'resolved', page: '1', limit: '10' };
+
+      await getPersonFailures(req, res, next);
+
+      expect(personService.getPersonFailures).toHaveBeenCalledWith('resolved', 10, 0);
+      expect(personService.getPersonFailureCount).toHaveBeenCalledWith('resolved');
+    });
+
+    it('should calculate correct pagination for multiple pages', async () => {
+      (personService.getPersonFailures as jest.Mock).mockResolvedValue([]);
+      (personService.getPersonFailureCount as jest.Mock).mockResolvedValue(100);
+
+      req.query = { page: '3', limit: '20' };
+
+      await getPersonFailures(req, res, next);
+
+      expect(personService.getPersonFailures).toHaveBeenCalledWith(undefined, 20, 40);
+      expect(res.json).toHaveBeenCalledWith(
+        expect.objectContaining({
+          pagination: {
+            totalCount: 100,
+            totalPages: 5,
+            currentPage: 3,
+            limit: 20,
+            hasNextPage: true,
+            hasPrevPage: true,
+          },
+        }),
+      );
+    });
+
+    it('should call next with error when service throws', async () => {
+      const error = new Error('Database error');
+      (personService.getPersonFailures as jest.Mock).mockRejectedValue(error);
+
+      req.query = {};
+
+      await getPersonFailures(req, res, next);
+
+      expect(next).toHaveBeenCalledWith(error);
+      expect(res.status).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('getPersonFailure', () => {
+    it('should return the failure record when found', async () => {
+      const mockFailure = { id: 5, personId: 10, status: 'pending', notes: null };
+      (personService.getPersonFailureById as jest.Mock).mockResolvedValue(mockFailure);
+
+      req.params = { failureId: '5' };
+
+      await getPersonFailure(req, res, next);
+
+      expect(personService.getPersonFailureById).toHaveBeenCalledWith(5);
+      expect(res.status).toHaveBeenCalledWith(200);
+      expect(res.json).toHaveBeenCalledWith({ message: 'Retrieved person failure', results: mockFailure });
+    });
+
+    it('should return 404 when failure record is not found', async () => {
+      (personService.getPersonFailureById as jest.Mock).mockResolvedValue(null);
+
+      req.params = { failureId: '999' };
+
+      await getPersonFailure(req, res, next);
+
+      expect(personService.getPersonFailureById).toHaveBeenCalledWith(999);
+      expect(res.status).toHaveBeenCalledWith(404);
+      expect(res.json).toHaveBeenCalledWith({ message: 'Person failure with id 999 not found' });
+    });
+
+    it('should call next with error when service throws', async () => {
+      const error = new Error('Database error');
+      (personService.getPersonFailureById as jest.Mock).mockRejectedValue(error);
+
+      req.params = { failureId: '5' };
+
+      await getPersonFailure(req, res, next);
+
+      expect(next).toHaveBeenCalledWith(error);
+      expect(res.status).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('resolvePersonFailure', () => {
+    it('should mark a person failure as resolved', async () => {
+      (personService.resolvePersonFailure as jest.Mock).mockResolvedValue(undefined);
+
+      req.params = { personId: '10' };
+      req.body = { notes: 'Fixed manually' };
+
+      await resolvePersonFailure(req, res, next);
+
+      expect(personService.resolvePersonFailure).toHaveBeenCalledWith(10, 'Fixed manually');
+      expect(res.status).toHaveBeenCalledWith(200);
+      expect(res.json).toHaveBeenCalledWith({ message: 'Person failure for person 10 marked as resolved' });
+    });
+
+    it('should resolve without notes when notes not provided', async () => {
+      (personService.resolvePersonFailure as jest.Mock).mockResolvedValue(undefined);
+
+      req.params = { personId: '10' };
+      req.body = {};
+
+      await resolvePersonFailure(req, res, next);
+
+      expect(personService.resolvePersonFailure).toHaveBeenCalledWith(10, undefined);
+    });
+
+    it('should call next with error when service throws', async () => {
+      const error = new Error('Resolve failed');
+      (personService.resolvePersonFailure as jest.Mock).mockRejectedValue(error);
+
+      req.params = { personId: '10' };
+      req.body = { notes: 'test' };
+
+      await resolvePersonFailure(req, res, next);
+
+      expect(next).toHaveBeenCalledWith(error);
+      expect(res.status).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('mergeAndDeletePerson', () => {
+    it('should merge source person into target and return counts', async () => {
+      const mockResult = { showsMerged: 3, moviesMerged: 2 };
+      (personService.mergeAndDeletePerson as jest.Mock).mockResolvedValue(mockResult);
+
+      req.params = { personId: '5', targetPersonId: '10' };
+
+      await mergeAndDeletePerson(req, res, next);
+
+      expect(personService.mergeAndDeletePerson).toHaveBeenCalledWith(5, 10);
+      expect(res.status).toHaveBeenCalledWith(200);
+      expect(res.json).toHaveBeenCalledWith({
+        message: 'Person 5 merged into 10 and deleted (shows: 3, movies: 2)',
+        results: mockResult,
+      });
+    });
+
+    it('should handle zero merged items', async () => {
+      const mockResult = { showsMerged: 0, moviesMerged: 0 };
+      (personService.mergeAndDeletePerson as jest.Mock).mockResolvedValue(mockResult);
+
+      req.params = { personId: '7', targetPersonId: '8' };
+
+      await mergeAndDeletePerson(req, res, next);
+
+      expect(personService.mergeAndDeletePerson).toHaveBeenCalledWith(7, 8);
+      expect(res.json).toHaveBeenCalledWith({
+        message: 'Person 7 merged into 8 and deleted (shows: 0, movies: 0)',
+        results: mockResult,
+      });
+    });
+
+    it('should call next with error when service throws', async () => {
+      const error = new Error('Merge failed');
+      (personService.mergeAndDeletePerson as jest.Mock).mockRejectedValue(error);
+
+      req.params = { personId: '5', targetPersonId: '10' };
+
+      await mergeAndDeletePerson(req, res, next);
+
+      expect(next).toHaveBeenCalledWith(error);
+      expect(res.status).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('deletePerson', () => {
+    it('should delete a person and all references', async () => {
+      (personService.deletePersonAndReferences as jest.Mock).mockResolvedValue(undefined);
+
+      req.params = { personId: '42' };
+
+      await deletePerson(req, res, next);
+
+      expect(personService.deletePersonAndReferences).toHaveBeenCalledWith(42);
+      expect(res.status).toHaveBeenCalledWith(200);
+      expect(res.json).toHaveBeenCalledWith({ message: 'Person 42 and all references deleted successfully' });
+    });
+
+    it('should call next with error when service throws', async () => {
+      const error = new Error('Delete failed');
+      (personService.deletePersonAndReferences as jest.Mock).mockRejectedValue(error);
+
+      req.params = { personId: '42' };
+
+      await deletePerson(req, res, next);
+
+      expect(next).toHaveBeenCalledWith(error);
+      expect(res.status).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('updatePersonTmdbId', () => {
+    it('should update a person TMDB ID and return the result', async () => {
+      const mockResult = { id: 1, tmdbId: 99999, name: 'Test Person' };
+      (personService.updatePersonTmdbId as jest.Mock).mockResolvedValue(mockResult);
+
+      req.params = { personId: '1' };
+      req.body = { newTmdbId: 99999 };
+
+      await updatePersonTmdbId(req, res, next);
+
+      expect(personService.updatePersonTmdbId).toHaveBeenCalledWith(1, 99999);
+      expect(res.status).toHaveBeenCalledWith(200);
+      expect(res.json).toHaveBeenCalledWith({
+        message: 'Person 1 TMDB ID updated to 99999',
+        results: mockResult,
+      });
+    });
+
+    it('should handle string IDs by converting to numbers', async () => {
+      const mockResult = { id: 5, tmdbId: 11111 };
+      (personService.updatePersonTmdbId as jest.Mock).mockResolvedValue(mockResult);
+
+      req.params = { personId: '5' };
+      req.body = { newTmdbId: '11111' };
+
+      await updatePersonTmdbId(req, res, next);
+
+      expect(personService.updatePersonTmdbId).toHaveBeenCalledWith(5, 11111);
+    });
+
+    it('should call next with error when service throws', async () => {
+      const error = new Error('Update failed');
+      (personService.updatePersonTmdbId as jest.Mock).mockRejectedValue(error);
+
+      req.params = { personId: '1' };
+      req.body = { newTmdbId: 99999 };
+
+      await updatePersonTmdbId(req, res, next);
 
       expect(next).toHaveBeenCalledWith(error);
       expect(res.status).not.toHaveBeenCalled();

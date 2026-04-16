@@ -25,6 +25,13 @@ jest.mock('@controllers/contentController', () => ({
   getPeople: jest.fn((_req, res) => res.status(200).send('retrieved people')),
   getPersonDetails: jest.fn((_req, res) => res.status(200).send('retrieved person details')),
   updatePerson: jest.fn((_req, res) => res.status(200).send('person updated')),
+  getPersonByTmdbId: jest.fn((_req, res) => res.status(200).send('retrieved person by TMDB')),
+  getPersonFailures: jest.fn((_req, res) => res.status(200).send('retrieved person failures')),
+  getPersonFailure: jest.fn((_req, res) => res.status(200).send('retrieved person failure')),
+  resolvePersonFailure: jest.fn((_req, res) => res.status(200).send('resolved person failure')),
+  mergeAndDeletePerson: jest.fn((_req, res) => res.status(200).send('person merged and deleted')),
+  deletePerson: jest.fn((_req, res) => res.status(200).send('person deleted')),
+  updatePersonTmdbId: jest.fn((_req, res) => res.status(200).send('person TMDB id updated')),
 }));
 
 const app = express();
@@ -161,6 +168,48 @@ describe('ContentRouter', () => {
       const res = await request(app).post('/api/v1/people/update').send({});
       expect(res.status).toBe(200);
       expect(res.text).toBe('person updated');
+    });
+
+    it('GET /api/v1/people/failures', async () => {
+      const res = await request(app).get('/api/v1/people/failures').send({});
+      expect(res.status).toBe(200);
+      expect(res.text).toBe('retrieved person failures');
+    });
+
+    it('GET /api/v1/people/failures/:failureId', async () => {
+      const res = await request(app).get('/api/v1/people/failures/123').send({});
+      expect(res.status).toBe(200);
+      expect(res.text).toBe('retrieved person failure');
+    });
+
+    it('PUT /api/v1/people/failures/:personId/resolve', async () => {
+      const res = await request(app).put('/api/v1/people/failures/123/resolve').send({});
+      expect(res.status).toBe(200);
+      expect(res.text).toBe('resolved person failure');
+    });
+
+    it('GET /api/v1/people/by-tmdb/:tmdbId', async () => {
+      const res = await request(app).get('/api/v1/people/by-tmdb/99999').send({});
+      expect(res.status).toBe(200);
+      expect(res.text).toBe('retrieved person by TMDB');
+    });
+
+    it('POST /api/v1/people/:personId/merge/:targetPersonId', async () => {
+      const res = await request(app).post('/api/v1/people/789/merge/101').send({});
+      expect(res.status).toBe(200);
+      expect(res.text).toBe('person merged and deleted');
+    });
+
+    it('DELETE /api/v1/people/:personId', async () => {
+      const res = await request(app).delete('/api/v1/people/789').send({});
+      expect(res.status).toBe(200);
+      expect(res.text).toBe('person deleted');
+    });
+
+    it('PUT /api/v1/people/:personId/tmdb-id', async () => {
+      const res = await request(app).put('/api/v1/people/789/tmdb-id').send({});
+      expect(res.status).toBe(200);
+      expect(res.text).toBe('person TMDB id updated');
     });
   });
 });

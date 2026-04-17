@@ -79,7 +79,11 @@ export const executeJob = asyncHandler(async (req: Request, res: Response, next:
       }
     }
 
-    manuallyExecuteJob(jobName, options);
+    if (options) {
+      manuallyExecuteJob(jobName, options);
+    } else {
+      manuallyExecuteJob(jobName);
+    }
     res.status(202).json({ message: `Job ${jobName} started` });
   } catch (error) {
     next(error);

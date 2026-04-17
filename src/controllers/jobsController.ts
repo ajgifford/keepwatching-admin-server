@@ -53,7 +53,8 @@ export const resumeAll = asyncHandler(async (req: Request, res: Response, next: 
 
 /**
  * Manually execute a job
- * @route POST /api/v1/admin/jobs/execute?jobName=<name>
+ * @route POST /api/v1/admin/jobs/execute?jobName=<name>[&batch=<0-11>]
+ * The `batch` query param is only used for the peopleUpdate job to override the auto-calculated batch index.
  */
 export const executeJob = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
   try {
@@ -63,7 +64,22 @@ export const executeJob = asyncHandler(async (req: Request, res: Response, next:
       return;
     }
     const jobName: JobName = jobParam as JobName;
-    manuallyExecuteJob(jobName);
+
+    let options: { batch?: number; runAll?: boolean } | undefined;
+    if (jobName === 'peopleUpdate') {
+      if (req.query.runAll === 'true') {
+        options = { runAll: true };
+      } else if (req.query.batch !== undefined) {
+        const batch = parseInt(req.query.batch as string, 10);
+        if (isNaN(batch) || batch < 0 || batch > 11) {
+          res.status(400).json({ error: 'Invalid batch number (must be 0-11)' });
+          return;
+        }
+        options = { batch };
+      }
+    }
+
+    manuallyExecuteJob(jobName, options);
     res.status(202).json({ message: `Job ${jobName} started` });
   } catch (error) {
     next(error);

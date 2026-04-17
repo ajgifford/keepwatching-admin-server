@@ -269,10 +269,10 @@ perform_deployment() {
   check_git_status
 
   # Show what will change
-  show_git_changes
+  show_git_changes || true
   local git_up_to_date=$?
 
-  check_dependencies_changes
+  check_dependencies_changes || true
   local deps_will_change=$?
 
   if $DRY_RUN; then

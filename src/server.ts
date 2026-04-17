@@ -1,5 +1,6 @@
 import 'dotenv/config';
 
+import { authenticateAdmin } from './middleware/authenticationMiddleware';
 import accountRouter from './routes/accountManagementRouter';
 import adminRouter from './routes/adminRouter';
 import contentRouter from './routes/contentRouter';
@@ -12,6 +13,8 @@ import notificationRouter from './routes/notificationsRouter';
 import statisticsRouter from './routes/statisticsRouter';
 import { errorHandler } from '@ajgifford/keepwatching-common-server';
 import {
+  getAdminServiceAccountPath,
+  getAdminServiceName,
   getLogDirectory,
   getPort,
   getRateLimitMax,
@@ -58,12 +61,19 @@ const UPLOADS_DIRECTORY = getUploadDirectory();
 const LOG_DIRECTORY = getLogDirectory();
 const PORT = getPort();
 const SERVICE_NAME = getServiceName();
+const ADMIN_SERVICE_NAME = getAdminServiceName();
+const ADMIN_SERVICE_ACCOUNT_PATH = getAdminServiceAccountPath();
 
 const app = express();
 const httpServer = createServer(app);
 
 const serviceAccount: object = JSON.parse(readFileSync(SERVICE_ACCOUNT_PATH, 'utf-8'));
 initializeFirebase(serviceAccount, SERVICE_NAME);
+
+if (ADMIN_SERVICE_NAME && ADMIN_SERVICE_ACCOUNT_PATH) {
+  const adminServiceAccount: object = JSON.parse(readFileSync(ADMIN_SERVICE_ACCOUNT_PATH, 'utf-8'));
+  initializeFirebase(adminServiceAccount, ADMIN_SERVICE_NAME);
+}
 
 // Middleware
 app.use(cors());
@@ -82,6 +92,7 @@ const limiter = rateLimit({
 });
 
 app.use('/api/', limiter);
+app.use(authenticateAdmin);
 app.use(accountRouter);
 app.use(adminRouter);
 app.use(ratingsAndRecommendationsRouter);
@@ -186,6 +197,14 @@ const gracefulShutdown = (signal: string) => {
       await shutdownFirebase(SERVICE_NAME);
     } catch (error) {
       cliLogger.error('Error during Firebase shutdown', error);
+    }
+
+    if (ADMIN_SERVICE_NAME && ADMIN_SERVICE_ACCOUNT_PATH) {
+      try {
+        await shutdownFirebase(ADMIN_SERVICE_NAME);
+      } catch (error) {
+        cliLogger.error('Error during admin Firebase shutdown', error);
+      }
     }
 
     cliLogger.info('Graceful shutdown complete, exiting process');

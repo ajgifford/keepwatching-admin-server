@@ -8,11 +8,11 @@ module.exports = {
       watch: false,
       env: {
         NODE_ENV: 'production',
-        PORT: 3001,
+        PORT: 3034,
       },
       env_production: {
         NODE_ENV: 'production',
-        PORT: 3001,
+        PORT: 3034,
       },
       merge_logs: true,
     },
@@ -29,7 +29,7 @@ module.exports = {
       },
       env: {
         NODE_ENV: 'development',
-        PORT: 3001,
+        PORT: 3034,
       },
       merge_logs: true,
     },

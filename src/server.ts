@@ -15,6 +15,8 @@ import { errorHandler } from '@ajgifford/keepwatching-common-server';
 import {
   getAdminServiceAccountPath,
   getAdminServiceName,
+  getCertsKeyPath,
+  getCertsServerPath,
   getLogDirectory,
   getPort,
   getRateLimitMax,
@@ -49,7 +51,7 @@ import express from 'express';
 import rateLimit from 'express-rate-limit';
 import { readFileSync } from 'fs';
 import helmet from 'helmet';
-import { createServer } from 'http';
+import https from 'https';
 
 GlobalErrorHandler.initialize();
 
@@ -64,8 +66,15 @@ const SERVICE_NAME = getServiceName();
 const ADMIN_SERVICE_NAME = getAdminServiceName();
 const ADMIN_SERVICE_ACCOUNT_PATH = getAdminServiceAccountPath();
 
+const KEY_PATH = getCertsKeyPath();
+const CERT_PATH = getCertsServerPath();
+const credentials = {
+  key: readFileSync(KEY_PATH),
+  cert: readFileSync(CERT_PATH),
+};
+
 const app = express();
-const httpServer = createServer(app);
+const httpServer = https.createServer(credentials, app);
 
 const serviceAccount: object = JSON.parse(readFileSync(SERVICE_ACCOUNT_PATH, 'utf-8'));
 initializeFirebase(serviceAccount, SERVICE_NAME);

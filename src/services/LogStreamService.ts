@@ -61,11 +61,7 @@ export class LogStreamService {
         // Notify client that this log file is not available
         const notFoundEntry: LogEntry = {
           timestamp: new Date().toISOString(),
-          service: service.includes('express')
-            ? LogService.APP
-            : service.includes('pm2')
-              ? LogService.CONSOLE
-              : LogService.SYSTEM,
+          service: serviceMapping[service] || LogService.SYSTEM,
           message: `Log file not found: ${logPath}`,
           level: LogLevel.WARN,
           logFile: path.basename(logPath),

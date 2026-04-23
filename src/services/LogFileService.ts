@@ -1,4 +1,4 @@
-import { getExpressLogDir, getPM2LogDir } from '@ajgifford/keepwatching-common-server/config';
+import { getAdminServerName, getExpressLogDir, getPM2LogDir } from '@ajgifford/keepwatching-common-server/config';
 import { cliLogger } from '@ajgifford/keepwatching-common-server/logger';
 import { LogService } from '@ajgifford/keepwatching-types';
 import fs from 'fs';
@@ -7,21 +7,41 @@ import { getCurrentDate } from '../utils/dateHelpers';
 
 const EXPRESS_LOG_DIRECTORY = getExpressLogDir();
 const PM2_LOG_DIRECTORY = getPM2LogDir();
+const NGINX_LOG_DIR = process.env.NGINX_LOG_DIR || '/var/log/nginx';
+
+const adminServiceName = getAdminServerName() || 'keepwatching-admin';
+const adminPm2Name = `${adminServiceName}-server`;
+
+// Matches the date portion appended by winston-daily-rotate-file (MMMM-DD-YYYY)
+const ROTATING_DATE_PATTERN =
+  /-(January|February|March|April|May|June|July|August|September|October|November|December)-\d{2}-\d{4}\.log$/;
 
 const LOG_PATHS: Record<string, string> = {
-  nginx: '/var/log/nginx/access.log',
+  nginx: `${NGINX_LOG_DIR}/access.log`,
+  'nginx-client': `${NGINX_LOG_DIR}/keepwatching.access.log`,
+  'nginx-admin': `${NGINX_LOG_DIR}/keepwatching-admin.access.log`,
   'KeepWatching-App': `${EXPRESS_LOG_DIRECTORY}/keepwatching-${getCurrentDate()}.log`,
   'KeepWatching-App-Error': `${EXPRESS_LOG_DIRECTORY}/keepwatching-error.log`,
   'KeepWatching-Console': `${PM2_LOG_DIRECTORY}/keepwatching-api-server-out-0.log`,
   'KeepWatching-Console-Error': `${PM2_LOG_DIRECTORY}/keepwatching-api-server-error-0.log`,
+  'KeepWatching-Admin-App': `${EXPRESS_LOG_DIRECTORY}/${adminServiceName}-${getCurrentDate()}.log`,
+  'KeepWatching-Admin-App-Error': `${EXPRESS_LOG_DIRECTORY}/${adminServiceName}-error.log`,
+  'KeepWatching-Admin-Console': `${PM2_LOG_DIRECTORY}/${adminPm2Name}-out-0.log`,
+  'KeepWatching-Admin-Console-Error': `${PM2_LOG_DIRECTORY}/${adminPm2Name}-error-0.log`,
 };
 
 const SERVICE_MAPPING: { [key: string]: LogService } = {
   'KeepWatching-App': LogService.APP,
   'KeepWatching-App-Error': LogService.APP,
   nginx: LogService.NGINX,
+  'nginx-client': LogService.NGINX,
+  'nginx-admin': LogService.NGINX,
   'KeepWatching-Console': LogService.CONSOLE,
   'KeepWatching-Console-Error': LogService.CONSOLE_ERROR,
+  'KeepWatching-Admin-App': LogService.ADMIN_APP,
+  'KeepWatching-Admin-App-Error': LogService.ADMIN_APP,
+  'KeepWatching-Admin-Console': LogService.ADMIN_CONSOLE,
+  'KeepWatching-Admin-Console-Error': LogService.ADMIN_CONSOLE_ERROR,
 };
 
 /**
@@ -49,15 +69,17 @@ export class LogFileService {
   }
 
   /**
-   * Find all rotating log files matching a base path pattern
-   * @param basePath - Base path pattern (e.g., /logs/app-YYYY-MM-DD.log)
+   * Find all rotating log files matching a service name prefix in the same directory.
+   * Extracts the prefix by stripping the date portion (MMMM-DD-YYYY) from the base filename
+   * so that 'keepwatching' and 'keepwatching-admin' are handled as distinct prefixes.
+   * @param basePath - Base path of a dated log file (e.g., /logs/keepwatching-April-22-2026.log)
    * @returns Array of file paths sorted by modification time (newest first)
    */
   findRotatingLogs(basePath: string): string[] {
     try {
       const dir = path.dirname(basePath);
       const baseFileName = path.basename(basePath);
-      const prefix = baseFileName.split('-')[0];
+      const prefix = baseFileName.replace(ROTATING_DATE_PATTERN, '');
 
       const rotatingLogs = fs
         .readdirSync(dir)
@@ -108,23 +130,27 @@ export class LogFileService {
   getLogFilePaths(filters?: { startDate?: string; endDate?: string }): Record<string, string> {
     const logFiles: { [key: string]: string } = { ...LOG_PATHS };
 
-    // Find the latest rotating log for express
-    const latestRotatingLog = this.findLatestRotatingLog(logFiles['KeepWatching-App']);
-    if (latestRotatingLog) {
-      logFiles['KeepWatching-App'] = latestRotatingLog;
+    // Resolve the latest rotating log for each app log type
+    for (const key of ['KeepWatching-App', 'KeepWatching-Admin-App']) {
+      const latestRotatingLog = this.findLatestRotatingLog(logFiles[key]);
+      if (latestRotatingLog) {
+        logFiles[key] = latestRotatingLog;
+      }
     }
 
-    // Find additional rotating logs if date filters are applied
+    // Include all historical rotating logs when date filters are applied
     if (filters?.startDate || filters?.endDate) {
-      const allRotatingLogs = this.findRotatingLogs(LOG_PATHS['KeepWatching-App']);
-
-      // Add each rotating log with its own key
-      allRotatingLogs.forEach((logPath, index) => {
-        if (index > 0) {
-          // Skip the first one as it's already included
-          logFiles[`KeepWatching-App-${index}`] = logPath;
-        }
-      });
+      for (const [baseKey, basePath] of [
+        ['KeepWatching-App', LOG_PATHS['KeepWatching-App']],
+        ['KeepWatching-Admin-App', LOG_PATHS['KeepWatching-Admin-App']],
+      ]) {
+        const allRotatingLogs = this.findRotatingLogs(basePath);
+        allRotatingLogs.forEach((logPath, index) => {
+          if (index > 0) {
+            logFiles[`${baseKey}-${index}`] = logPath;
+          }
+        });
+      }
     }
 
     return logFiles;

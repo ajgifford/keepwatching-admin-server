@@ -7,6 +7,9 @@ jest.mock('fs');
 jest.mock('@ajgifford/keepwatching-common-server/config', () => ({
   getExpressLogDir: jest.fn(() => '/var/log/express'),
   getPM2LogDir: jest.fn(() => '/var/log/pm2'),
+  getServiceName: jest.fn(() => 'keepwatching'),
+  getAdminServiceName: jest.fn(() => 'keepwatching-admin'),
+  getAdminServerName: jest.fn(() => 'keepwatching-admin'),
 }));
 jest.mock('@ajgifford/keepwatching-common-server/logger', () => ({
   cliLogger: {

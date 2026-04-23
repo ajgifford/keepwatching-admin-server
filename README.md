@@ -70,39 +70,56 @@ Create a `.env` file with the following variables:
 ```env
 # Server Configuration
 NODE_ENV=development
-PORT=3001
-SERVICE_NAME=keepwatching-admin-server
+PORT=3034
+SERVICE_NAME=keepwatching
+ADMIN_SERVICE_NAME=keepwatching-admin
+ADMIN_SERVER_NAME=keepwatching-admin
+
+# SSL Certificates
+CERT_KEY_PATH=certs/server.key
+CERT_PATH=certs/server.crt
 
 # Database Configuration
-DB_HOST=localhost
-DB_PORT=3306
-DB_USER=your_db_user
-DB_PASSWORD=your_db_password
-DB_NAME=keepwatching
+MYSQL_HOST=127.0.0.1
+MYSQL_USER=your_db_user
+MYSQL_PWD=your_db_password
+MYSQL_DB=KeepWatching
 
 # Firebase Configuration
-SERVICE_ACCOUNT_PATH=/path/to/firebase-service-account.json
+SERVICE_ACCOUNT_PATH=./certs/keepwatching-service-account-dev.json
+ADMIN_SERVICE_ACCOUNT_PATH=./certs/keepwatching-admin-service-account-dev.json
 
-# Email Configuration (Optional)
+# Email Configuration
 EMAIL_ENABLED=true
-SMTP_HOST=smtp.example.com
-SMTP_PORT=587
-SMTP_SECURE=false
-SMTP_USER=your_email@example.com
-SMTP_PASSWORD=your_email_password
-EMAIL_FROM=noreply@keepwatching.com
+EMAIL_HOST=smtp.gmail.com
+EMAIL_PORT=587
+EMAIL_SECURE=false
+EMAIL_USER=your_email@example.com
+EMAIL_PASSWORD=your_email_password
+EMAIL_FROM=KeepWatching <your_email@example.com>
 
-# API Configuration
-TMDB_API_KEY=your_tmdb_api_key
-TMDB_API_READ_ACCESS_TOKEN=your_tmdb_read_token
+# TMDB API
+TMDB_TOKEN=your_tmdb_read_access_token
 
 # Directories
-UPLOAD_DIRECTORY=/path/to/uploads
-LOG_DIRECTORY=/path/to/logs
+UPLOADS_DIR=/path/to/uploads
+LOG_DIR=/path/to/logs
+EXPRESS_LOG_DIR=/path/to/logs
+NGINX_LOG_DIR=/path/to/logs/nginx
+PM2_LOG_DIR=/path/to/logs
 
 # Rate Limiting
-RATE_LIMIT_TIME_WINDOW=900000
-RATE_LIMIT_MAX=100
+RATE_LIMIT_MAX=1000
+
+# Redis Configuration
+REDIS_HOST=localhost
+REDIS_PORT=6379
+REDIS_PASSWORD=your_redis_password
+REDIS_DB=0
+
+# Scheduled Jobs (cron expressions)
+SHOWS_UPDATE_SCHEDULE=10 11 * * *
+PERSON_UPDATE_SCHEDULE=50 16 * * *
 ```
 
 ### Environment Files
